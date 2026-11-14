@@ -1,0 +1,22 @@
+<RCC>
+    <qresource prefix="/">
+        <file alias="Btn.qml">Btn.qml</file>
+        <file alias="CalendarPage.qml">CalendarPage.qml</file>
+        <file alias="CycleBar.qml">CycleBar.qml</file>
+        <file alias="Field.qml">Field.qml</file>
+        <file alias="HelpOverlay.qml">HelpOverlay.qml</file>
+        <file alias="Main.qml">Main.qml</file>
+        <file alias="PresetsPage.qml">PresetsPage.qml</file>
+        <file alias="ProjectPicker.qml">ProjectPicker.qml</file>
+        <file alias="ProjectsPage.qml">ProjectsPage.qml</file>
+        <file alias="RailButton.qml">RailButton.qml</file>
+        <file alias="SessionEditor.qml">SessionEditor.qml</file>
+        <file alias="Sheet.qml">Sheet.qml</file>
+        <file alias="Stepper.qml">Stepper.qml</file>
+        <file alias="Swatch.qml">Swatch.qml</file>
+        <file alias="TimerPage.qml">TimerPage.qml</file>
+        <file alias="Toggle.qml">Toggle.qml</file>
+        <file alias="ToolTipHint.qml">ToolTipHint.qml</file>
+        <file alias="i18n/en.json">i18n/en.json</file>
+    </qresource>
+</RCC>

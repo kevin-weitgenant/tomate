@@ -1,0 +1,24 @@
+pkgname=tomate
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Pomodoro timer with projects and a calendar of your work'
+arch=('x86_64' 'aarch64')
+license=('MIT')
+depends=('qt6-base' 'qt6-declarative' 'qt6-wayland' 'libnotify')
+optdepends=('pipewire: sound when a phase ends')
+makedepends=('gcc' 'make')
+source=()
+sha256sums=()
+
+build() {
+  cd "$startdir/.."
+  ./bin/build
+}
+
+package() {
+  cd "$startdir/.."
+  install -Dm755 build/tomate "$pkgdir/usr/bin/tomate"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 "$startdir/tomate.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/tomate.svg"
+  install -Dm644 "$startdir/tomate.desktop" "$pkgdir/usr/share/applications/tomate.desktop"
+}

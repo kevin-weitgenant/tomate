@@ -1,0 +1,14 @@
+{
+  "Delete this project and its %n session(s)? This can't be undone. Archive keeps the history instead.": {
+    "one": "Delete this project and its %n session? This can't be undone. Archive keeps the history instead.",
+    "other": "Delete this project and its %n sessions? This can't be undone. Archive keeps the history instead."
+  },
+  "%n session(s)": {
+    "one": "%n session",
+    "other": "%n sessions"
+  },
+  "Default for %n project(s).": {
+    "one": "Default for %n project.",
+    "other": "Default for %n projects."
+  }
+}

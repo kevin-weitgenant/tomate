@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Tomate
+Comment=Pomodoro timer with projects and a calendar of your work
+Exec=tomate
+Icon=tomate
+Terminal=false
+Categories=Utility;Office;
+Keywords=pomodoro;timer;focus;time tracking;
+StartupWMClass=tomate
