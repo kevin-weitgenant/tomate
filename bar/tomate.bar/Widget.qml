@@ -106,7 +106,7 @@ BarWidget {
   }
   function press(button) {
     if (button === Qt.RightButton)
-      run('exec omarchy-launch-or-focus tomate "uwsm-app -- $T"')
+      Quickshell.execDetached(["bash", Qt.resolvedUrl("open.sh").toString().replace("file://", "")])
     else if (button === Qt.LeftButton)
       run('exec "$T" toggle >/dev/null')
   }
