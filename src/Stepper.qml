@@ -43,7 +43,7 @@ RowLayout {
             spacing: 4
             TextInput {
                 id: valueInput
-                text: win.minutes(root.value)
+                Component.onCompleted: text = win.minutes(root.value)
                 color: ui.bright
                 font.bold: true
                 selectByMouse: true

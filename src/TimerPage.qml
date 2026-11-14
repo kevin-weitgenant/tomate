@@ -72,12 +72,29 @@ Item {
             Layout.topMargin: 8
             horizontalAlignment: TextInput.AlignHCenter
             placeholder: qsTr("What are you focusing on?")
-            text: backend.note
-            onEditingFinished: if (text !== backend.note) backend.setNote(text)
+            // No binding to backend.note: the backend ticks twice a second and
+            // a binding would overwrite what is being typed. Instead the saved
+            // note flows in only while the field isn't being edited.
+            Component.onCompleted: text = backend.note
+            onEditingFinished: save()
             onAccepted: intention.input.focus = false
+            function save() {
+                saveTimer.stop()
+                if (text.trim() !== backend.note) backend.setNote(text)
+            }
+            // Save shortly after typing stops, so nothing is lost if the
+            // window closes before Enter or a click elsewhere.
+            Timer { id: saveTimer; interval: 800; onTriggered: intention.save() }
+            Connections {
+                target: intention.input
+                function onTextEdited() { saveTimer.restart() }
+            }
             Connections {
                 target: backend
-                function onTicked() { if (!intention.input.activeFocus && intention.text !== backend.note) intention.text = backend.note }
+                function onTicked() {
+                    if (!intention.input.activeFocus && !saveTimer.running && intention.text !== backend.note)
+                        intention.text = backend.note
+                }
             }
         }
 

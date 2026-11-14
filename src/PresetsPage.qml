@@ -114,7 +114,15 @@ Item {
                             Layout.fillWidth: true
                             font.bold: true
                             font.pixelSize: 15
-                            text: page.selected ? page.selected.name : ""
+                            // Filled in by hand, not bound, so a data refresh can't
+                            // overwrite a name that is being typed.
+                            Component.onCompleted: text = page.selected ? page.selected.name : ""
+                            Connections {
+                                target: page
+                                function onSelectedChanged() {
+                                    if (!nameField.input.activeFocus) nameField.text = page.selected ? page.selected.name : ""
+                                }
+                            }
                             onEditingFinished: if (text.trim() && page.selected && text !== page.selected.name) page.update("name", text.trim())
                             onAccepted: nameField.input.focus = false
                         }
