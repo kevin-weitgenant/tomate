@@ -16,6 +16,7 @@
 #include "backend.h"
 #include "cli.h"
 #include "db.h"
+#include "desktop.h"
 #include "engine.h"
 #include "theme.h"
 #include "translator.h"
@@ -33,6 +34,16 @@ int main(int argc, char *argv[]) {
         Translator translator;
         app.installTranslator(&translator);
         return Cli::run(args);
+    }
+
+    // One window only: opening Tomate again (launcher, bar, terminal) brings
+    // the open one to the workspace in view instead of starting another.
+    if (args.size() < 2 || args.at(1) == "open") {
+        if (const QString open = Desktop::windowAddress(); !open.isEmpty() && qEnvironmentVariableIsEmpty("TOMATE_SHOTS")) {
+            QCoreApplication probe(argc, argv);
+            Desktop::summon(open);
+            return 0;
+        }
     }
 
     QGuiApplication app(argc, argv);

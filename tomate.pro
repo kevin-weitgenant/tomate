@@ -6,6 +6,7 @@ TEMPLATE = app
 
 HEADERS += \
     src/db.h \
+    src/desktop.h \
     src/engine.h \
     src/backend.h \
     src/cli.h \
@@ -15,6 +16,7 @@ HEADERS += \
 SOURCES += \
     src/main.cpp \
     src/db.cpp \
+    src/desktop.cpp \
     src/engine.cpp \
     src/backend.cpp \
     src/cli.cpp \

@@ -1,10 +1,13 @@
 #include "cli.h"
 
 #include "db.h"
+#include "desktop.h"
 #include "engine.h"
 
 #include <QDate>
+#include <QCoreApplication>
 #include <QDateTime>
+#include <QProcess>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -14,7 +17,7 @@
 
 namespace {
 
-const QStringList Commands = {"status", "toggle", "start", "pause", "skip", "stop", "project",
+const QStringList Commands = {"show", "status", "toggle", "start", "pause", "skip", "stop", "project",
                               "report", "export", "help", "--help", "-h", "--version"};
 
 QTextStream &out() {
@@ -153,7 +156,8 @@ int exportCsv(Db &db, const QStringList &args) {
 
 void help() {
     out() << "Usage: tomate [command]\n\n"
-             "  (none), open        open the window\n"
+             "  (none), open        open the window (or bring it here)\n"
+             "  show                bring the window to this workspace, opening it if needed\n"
              "  status [--json]     what the timer is doing (for the bar)\n"
              "  toggle              start or pause\n"
              "  start | pause | skip | stop\n"
@@ -178,6 +182,12 @@ int Cli::run(const QStringList &args) {
     if (cmd == "--version") {
         out() << "tomate 0.1.0\n";
         return 0;
+    }
+    if (cmd == "show") {
+        if (Desktop::summon(Desktop::windowAddress()))
+            return 0;
+        // Not open yet: start the window as its own process and return.
+        return QProcess::startDetached(QCoreApplication::applicationFilePath(), {}) ? 0 : fail("could not start the window");
     }
     Db db;
     if (!db.ok())
