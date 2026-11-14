@@ -38,5 +38,5 @@ Rectangle {
         cursorShape: Qt.PointingHandCursor
         onClicked: root.clicked()
     }
-    ToolTipHint { visible: mouse.containsMouse && root.hint !== ""; text: root.hint }
+    ToolTipHint { visible: mouse.containsMouse && root.hint !== "" && !screenshotMode; text: root.hint }
 }

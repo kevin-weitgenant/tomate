@@ -1,0 +1,30 @@
+#!/bin/sh
+# Regenerates docs/screenshots/*.png from made-up demo data, offscreen, in
+# the current Omarchy theme. Never touches your real database.
+set -eu
+
+ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+export TOMATE_DB="$TMP/demo.db"
+
+"$ROOT/bin/build" >/dev/null
+"$ROOT/build/tomate" status >/dev/null
+python3 -I "$ROOT/tools/demo_data.py" "$TOMATE_DB"
+"$ROOT/build/tomate" project "Side project" >/dev/null
+"$ROOT/build/tomate" start >/dev/null
+# Make the running block 18 minutes old, with a note, so the ring shows progress.
+python3 -I - "$TOMATE_DB" <<'PY'
+import json, sqlite3, sys
+db = sqlite3.connect(sys.argv[1])
+state = json.loads(db.execute("SELECT value FROM settings WHERE key = 'timer'").fetchone()[0])
+state["phaseStart"] = str(int(state["phaseStart"]) - 18 * 60 * 1000)
+state["note"] = "Refactor the sync worker"
+db.execute("UPDATE sessions SET started_at = started_at - 1080, note = ? WHERE id = ?", (state["note"], state["sessionId"]))
+db.execute("UPDATE settings SET value = ? WHERE key = 'timer'", (json.dumps(state),))
+db.commit()
+PY
+
+mkdir -p "$ROOT/docs/screenshots"
+QT_QPA_PLATFORM=offscreen TOMATE_SHOTS="$ROOT/docs/screenshots" "$ROOT/build/tomate"
+ls "$ROOT/docs/screenshots"

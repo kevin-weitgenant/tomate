@@ -6,6 +6,7 @@
 #include <QGuiApplication>
 #include <QIcon>
 #include <QKeyEvent>
+#include <QMouseEvent>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQuickStyle>
@@ -79,32 +80,41 @@ int main(int argc, char *argv[]) {
     engine.rootContext()->setContextProperty("dbError", db.ok() ? QString() : db.path() + ": " + db.error());
 
     engine.rootContext()->setContextProperty("backend", &backend);
+    engine.rootContext()->setContextProperty("screenshotMode", !qEnvironmentVariableIsEmpty("TOMATE_SHOTS"));
     engine.load(QUrl("qrc:/Main.qml"));
     if (engine.rootObjects().isEmpty())
         return 1;
 
     // Development aid: TOMATE_SHOTS=<dir> saves each screen as a PNG and
-    // quits, so the UI can be checked offscreen (README screenshots too).
+    // quits, so the UI can be checked offscreen and the README screenshots
+    // regenerated (bin/screenshots).
     if (const QString shots = qEnvironmentVariable("TOMATE_SHOTS"); !shots.isEmpty()) {
+        struct Shot { int page; int key; const char *name; };
+        static const QList<Shot> plan = {
+            {0, 0, "timer"}, {1, 0, "calendar-week"}, {1, Qt::Key_M, "calendar-month"},
+            {2, 0, "projects"}, {3, 0, "presets"}, {0, Qt::Key_E, "custom-cycle"},
+        };
         auto *window = qobject_cast<QQuickWindow *>(engine.rootObjects().first());
+        // Park the pointer off the rail, so no hover hints show in the shots.
+        QCoreApplication::postEvent(window, new QMouseEvent(QEvent::MouseMove, QPointF(window->width() - 2, window->height() - 2),
+                                                            QPointF(window->width() - 2, window->height() - 2),
+                                                            Qt::NoButton, Qt::NoButton, Qt::NoModifier));
         auto *step = new QTimer(&app);
-        auto *page = new int(0);
+        auto *index = new int(-1);
         QObject::connect(step, &QTimer::timeout, &app, [=, &app] {
-            if (*page > 0)
-                window->grabWindow().save(QString("%1/%2.png").arg(shots).arg(*page - 1));
-            if (*page == 5) {
+            if (*index >= 0)
+                window->grabWindow().save(QString("%1/%2.png").arg(shots, plan.at(*index).name));
+            if (++*index == plan.size()) {
                 app.quit();
                 return;
             }
-            window->setProperty("page", *page % 4);
-            if (*page == 4) {
-                // The last shot shows the custom-times editor (E) on the timer.
+            const Shot &s = plan.at(*index);
+            window->setProperty("page", s.page);
+            if (s.key)
                 for (auto type : {QEvent::KeyPress, QEvent::KeyRelease})
-                    QCoreApplication::postEvent(window, new QKeyEvent(type, Qt::Key_E, Qt::NoModifier, "e"));
-            }
-            ++*page;
+                    QCoreApplication::postEvent(window, new QKeyEvent(type, s.key, Qt::NoModifier, QKeySequence(s.key).toString().toLower()));
         });
-        step->start(700);
+        step->start(800);
     }
 
     return app.exec();

@@ -261,7 +261,7 @@ Item {
                     anchors.horizontalCenter: parent.horizontalCenter
                     spacing: 8
                     Btn { text: qsTr("Apply"); kbd: "Enter"; primary: true; onClicked: page.applyEditor() }
-                    Btn { text: qsTr("Save as preset"); kbd: "Ctrl+S"; onClicked: page.saveEditorAsPreset() }
+                    Btn { text: qsTr("Save preset"); kbd: "Ctrl+S"; onClicked: page.saveEditorAsPreset() }
                 }
                 Shortcut { sequence: "Ctrl+S"; enabled: page.editing; onActivated: page.saveEditorAsPreset() }
             }
