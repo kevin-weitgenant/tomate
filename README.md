@@ -37,6 +37,13 @@ keyboard, and keeps everything in one local SQLite file.
 | `?` | all shortcuts |
 | `Q` | quit |
 
+## Status bar
+
+`bin/install-bar` adds a widget to the Omarchy bar, right after the clock: a
+small ring that empties as the block runs, the time left and the project.
+Left-click starts or pauses, right-click opens Tomate, hover shows the round,
+end time, note and today's total. Remove it with `omarchy plugin disable tomate.bar`.
+
 ## Command line
 
 ```sh

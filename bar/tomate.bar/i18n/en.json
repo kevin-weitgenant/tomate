@@ -1,0 +1,16 @@
+{
+  "focus": "Focus",
+  "short": "Short break",
+  "long": "Long break",
+  "ready": "%1 ready",
+  "paused": "Paused",
+  "round": "Round %1 of %2",
+  "ends": "ends %1",
+  "pausedNote": "Paused time doesn't count as work.",
+  "today": "Today %1 of %2",
+  "todayNoGoal": "Today %1",
+  "hintRunning": "Click: pause · Right-click: open Tomate",
+  "hintPaused": "Click: resume · Right-click: open Tomate",
+  "hintReady": "Click: start · Right-click: open Tomate",
+  "hintIdle": "Click: start focus · Right-click: open Tomate"
+}

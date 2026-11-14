@@ -1,0 +1,25 @@
+#!/bin/sh
+# Installs the bar widget into the Omarchy shell and puts it right after the
+# clock. Safe to run again after changing the widget.
+set -eu
+
+ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+DEST="$HOME/.config/omarchy/plugins/tomate.bar"
+SHELL_JSON="$HOME/.config/omarchy/shell.json"
+
+omarchy plugin validate "$ROOT/bar/tomate.bar"
+mkdir -p "$DEST"
+cp -r "$ROOT/bar/tomate.bar/." "$DEST/"
+omarchy-shell shell rescanPlugins >/dev/null 2>&1 || true
+# The rescan finishes in the background; wait until the shell knows the plugin.
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  omarchy plugin list 2>/dev/null | grep -q '^tomate.bar' && break
+  sleep 0.5
+done
+
+if ! grep -q '"tomate.bar"' "$SHELL_JSON" 2>/dev/null; then
+  [ -f "$SHELL_JSON" ] && cp "$SHELL_JSON" "$SHELL_JSON.bak.$(date +%s)"
+  omarchy plugin enable tomate.bar
+  omarchy bar move tomate.bar --section centerEnd --index 0
+fi
+echo "Tomate is in the bar."

@@ -59,10 +59,21 @@ int status(Db &db, Engine &engine, bool json) {
         return 0;
     }
     const int pct = s.lengthSec() ? int(100 * s.elapsedMs(now) / (qint64(s.lengthSec()) * 1000)) : 0;
+    // Today's closed sessions plus the block running right now.
+    const qint64 dayStart = QDate::currentDate().startOfDay().toSecsSinceEpoch();
+    qint64 today = db.scalar("SELECT COALESCE(SUM(duration_sec), 0) FROM sessions WHERE started_at >= ? AND ended_at IS NOT NULL",
+                             {dayStart}, 0).toLongLong();
+    if (s.sessionId)
+        today += s.elapsedMs(now) / 1000;
+    const QString ends = s.running() ? QDateTime::fromMSecsSinceEpoch(now + s.remainingMs(now)).toString("HH:mm") : QString();
     QJsonObject o{{"text", text}, {"tooltip", tooltip}, {"class", cls}, {"alt", cls},
                   {"percentage", qBound(0, pct, 100)}, {"phase", s.phase}, {"remaining", left},
                   {"round", s.round}, {"every", s.cycle.every}, {"project", project},
-                  {"paused", s.paused()}, {"waiting", s.waiting}};
+                  {"paused", s.paused()}, {"waiting", s.waiting}, {"idle", s.idle()}, {"ends", ends},
+                  {"note", s.note}, {"length", s.lengthSec()}, {"today", today},
+                  {"goal", db.setting("daily_goal_min", "240").toInt() * 60},
+                  {"cycle", s.cycle.custom ? QString("Custom") : s.cycle.name},
+                  {"color", db.scalar("SELECT color FROM projects WHERE id = ?", {s.projectId}, 0).toInt()}};
     out() << QJsonDocument(o).toJson(QJsonDocument::Compact) << "\n";
     return 0;
 }

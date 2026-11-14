@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "tomate.bar",
+  "name": "Tomate",
+  "version": "0.1.0",
+  "author": "Kevin Weitgenant",
+  "license": "MIT",
+  "description": "The running Tomate Pomodoro timer in the Omarchy bar: countdown, project and phase, with click to start or pause.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Widget.qml"
+  },
+  "barWidget": {
+    "displayName": "Tomate",
+    "description": "Countdown of the running focus block or break. Left-click starts or pauses, right-click opens Tomate.",
+    "category": "Status",
+    "allowMultiple": false,
+    "defaultSection": "centerEnd",
+    "defaults": {
+      "maxProjectLength": 18
+    },
+    "schema": [
+      {
+        "key": "maxProjectLength",
+        "type": "integer",
+        "label": "Longest project name shown",
+        "min": 0,
+        "max": 60,
+        "step": 1,
+        "defaultValue": 18
+      }
+    ]
+  }
+}
