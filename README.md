@@ -31,7 +31,7 @@ data in one local SQLite file. No account, no cloud, no Electron.
   double-click empty time to add time you worked away from the computer.
 - **Status bar widget** for the Omarchy shell: a small ring that empties as
   the block runs, the time left and the project. Click to start or pause,
-  right-click to bring the window to you.
+  right-click to bring the window to you ([see it](#the-status-bar)).
 - **Honest time**: the timer stores timestamps, not a ticking counter, so a
   suspend, crash or restart never loses or inflates time. Paused time
   doesn't count, and stopping early keeps the minutes you actually worked.
@@ -95,19 +95,40 @@ Opening Tomate again, from the launcher or by right-clicking the bar widget,
 brings the window to the workspace you're on instead of switching workspaces,
 and there is only ever one Tomate window.
 
-### The bar widget
+### The status bar
 
-| What you see | Meaning |
-| --- | --- |
-| accent ring + `31:36 · Side project` | focusing; the ring empties as time runs out |
-| green ring + `04:12` | short break (purple for a long break) |
-| dimmed ring with a pause sign | paused; paused time doesn't count as work |
-| yellow `Focus ready`, flashing 3 times | a break ended and the next block waits for you |
-| a small ring alone | idle; hover for today's total |
+Tomate lives in the Omarchy bar, right after the clock, so you can run your
+whole day without opening the window. Install it with `bin/install-bar`.
 
-Left-click starts, pauses or resumes. Right-click brings the Tomate window to
-you. Hover shows the round, end time, note and today's total against your
-goal. Remove it with `omarchy plugin disable tomate.bar`.
+![Tomate in the Omarchy bar, with its hover tooltip](docs/screenshots/bar/hover.png)
+
+**Using it from the bar**
+
+- **Left-click** to start a focus block, **pause** it, and **resume** it.
+  When a break ends and the next block is waiting, left-click starts it.
+- **Right-click** to bring the Tomate window to the workspace you're on (or
+  open it), for switching project, skipping, stopping or the calendar.
+- **Hover** to see the project, which round you're on, when the block ends,
+  your note, and today's total against your daily goal.
+- **Close the window** with `Super + W` at any time: the bar keeps the timer
+  going and sends the notification and sound when a block or break ends.
+
+**What it shows**
+
+| | State | Meaning |
+| --- | --- | --- |
+| ![Focusing](docs/screenshots/bar/focus.png) | **Focusing** | Accent ring, time left and the project. The ring empties as the block runs. |
+| ![Short break](docs/screenshots/bar/short.png) | **Short break** | Green ring and the time left in the break. |
+| ![Long break](docs/screenshots/bar/long.png) | **Long break** | Purple ring, after the last round of the cycle. |
+| ![Paused](docs/screenshots/bar/paused.png) | **Paused** | Dimmed, with a pause sign. Paused time doesn't count as work. Left-click resumes. |
+| ![Ready](docs/screenshots/bar/ready.png) | **Waiting for you** | A break ended and the next block hasn't started (auto-start is off). It flashes three times so you notice. Left-click starts it. |
+| ![Idle](docs/screenshots/bar/idle.png) | **Idle** | Just the ring, taking almost no space. Left-click starts a focus block on your current project. |
+
+The colours come from your Omarchy theme and change with it. To move the
+widget, use `omarchy bar move tomate.bar --section right` (or drag it on the
+bar). To remove it: `omarchy plugin disable tomate.bar`. After changing the
+widget's code, run `bin/install-bar` and then `omarchy restart shell`; the
+shell keeps the old version until it restarts.
 
 ### Keys
 

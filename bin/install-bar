@@ -23,3 +23,4 @@ if ! grep -q '"tomate.bar"' "$SHELL_JSON" 2>/dev/null; then
   omarchy bar move tomate.bar --section centerEnd --index 0
 fi
 echo "Tomate is in the bar."
+echo "If you changed the widget's code, run: omarchy restart shell"
