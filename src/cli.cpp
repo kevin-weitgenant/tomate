@@ -47,12 +47,14 @@ int status(Db &db, Engine &engine, bool json) {
     Engine::notify(engine.tick(), db);
     const TimerState s = engine.state();
     const qint64 now = engine.now();
-    const qint64 left = (s.remainingMs(now) + 999) / 1000;
+    const bool over = s.over;
+    const qint64 left = over ? (s.elapsedMs(now) + 999) / 1000 : (s.remainingMs(now) + 999) / 1000;
     const QString project = engine.projectName(s.projectId);
     const QString cls = s.idle() ? "idle" : s.waiting ? "ready" : s.paused() ? "paused" : s.phase;
     const QString icon = s.paused() ? "⏸" : s.phase == "focus" ? "◔" : "☕";
     QString text = s.idle() ? QString("◔ %1").arg(project)
                  : s.waiting ? QString("%1 %2 ready").arg(icon, phaseName(s.phase))
+                 : over ? QString("%1 +%2 · %3").arg(icon, clock(left), project)
                  : QString("%1 %2 · %3").arg(icon, clock(left), project);
     const QString tooltip = QString("%1 · round %2 of %3 · %4\n%5")
                                 .arg(phaseName(s.phase)).arg(s.round).arg(s.cycle.every)
@@ -68,11 +70,11 @@ int status(Db &db, Engine &engine, bool json) {
                              {dayStart}, 0).toLongLong();
     if (s.sessionId)
         today += s.elapsedMs(now) / 1000;
-    const QString ends = s.running() ? QDateTime::fromMSecsSinceEpoch(now + s.remainingMs(now)).toString("HH:mm") : QString();
+    const QString ends = s.running() && !over ? QDateTime::fromMSecsSinceEpoch(now + s.remainingMs(now)).toString("HH:mm") : QString();
     QJsonObject o{{"text", text}, {"tooltip", tooltip}, {"class", cls}, {"alt", cls},
                   {"percentage", qBound(0, pct, 100)}, {"phase", s.phase}, {"remaining", left},
                   {"round", s.round}, {"every", s.cycle.every}, {"project", project},
-                  {"paused", s.paused()}, {"waiting", s.waiting}, {"idle", s.idle()}, {"ends", ends},
+                  {"paused", s.paused()}, {"waiting", s.waiting}, {"idle", s.idle()}, {"ends", ends}, {"over", over},
                   {"breaks", s.cycle.hasBreaks()},
                   {"note", s.note}, {"length", s.lengthSec()}, {"today", today},
                   {"goal", db.setting("daily_goal_min", "240").toInt() * 60},

@@ -23,6 +23,10 @@ Backend::Backend(Db &db, Engine &engine, QObject *parent) : QObject(parent), m_d
 }
 
 int Backend::remainingSec() const {
+    // Overtime: the block reached 00:00 and keeps counting, so show the
+    // elapsed time climbing past the planned length.
+    if (m_state.over)
+        return int((m_state.elapsedMs(m_now) + 999) / 1000);
     // Round up, so a timer shows 25:00 the moment it starts and 00:01 last.
     const qint64 ms = m_state.remainingMs(m_now);
     return ms <= 0 ? 0 : int((ms + 999) / 1000);
@@ -43,7 +47,7 @@ QVariantMap Backend::cycle() const {
 }
 
 double Backend::endsAt() const {
-    if (m_state.waiting || m_state.paused())
+    if (m_state.waiting || m_state.paused() || m_state.over)
         return 0;
     return (m_now + m_state.remainingMs(m_now)) / 1000.0;
 }

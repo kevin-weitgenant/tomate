@@ -47,7 +47,7 @@ QJsonObject TimerState::toJson() const {
     return {{"phase", phase}, {"waiting", waiting}, {"round", round}, {"projectId", projectId},
             {"cycle", cycle.toJson()}, {"phaseStart", QString::number(phaseStart)},
             {"pausedAt", QString::number(pausedAt)}, {"pausedTotal", QString::number(pausedTotal)},
-            {"sessionId", sessionId}, {"note", note}};
+            {"sessionId", sessionId}, {"over", over}, {"note", note}};
 }
 
 TimerState TimerState::fromJson(const QJsonObject &o) {
@@ -63,6 +63,7 @@ TimerState TimerState::fromJson(const QJsonObject &o) {
     s.pausedAt = o.value("pausedAt").toString().toLongLong();
     s.pausedTotal = o.value("pausedTotal").toString().toLongLong();
     s.sessionId = o.value("sessionId").toInt();
+    s.over = o.value("over").toBool(false);
     s.note = o.value("note").toString();
     return s;
 }
@@ -152,6 +153,7 @@ void Engine::enter(TimerState &s, const QString &phase, qint64 startMs, bool aut
     s.pausedAt = 0;
     s.pausedTotal = 0;
     s.waiting = !autoStart;
+    s.over = false;
     s.phaseStart = autoStart ? startMs : 0;
     if (autoStart && phase == "focus")
         openSession(s, startMs);
@@ -182,8 +184,12 @@ void Engine::endCycle(TimerState &s) {
     s.cycle = presetCycle(s.cycle.presetId);
 }
 
+bool Engine::keepCounting() const {
+    return m_db.setting("keep_counting", "1") == "1";
+}
+
 void Engine::advance(TimerState &s, qint64 now, QList<TimerEvent> &events) {
-    for (int guard = 0; guard < 200 && s.running() && s.remainingMs(now) <= 0; ++guard) {
+    for (int guard = 0; guard < 200 && s.running() && !s.over && s.remainingMs(now) <= 0; ++guard) {
         const qint64 endMs = s.phaseStart + s.pausedTotal + qint64(s.lengthSec()) * 1000;
         TimerEvent e;
         e.minutes = (s.lengthSec() + 30) / 60;
@@ -191,8 +197,20 @@ void Engine::advance(TimerState &s, qint64 now, QList<TimerEvent> &events) {
         e.fresh = now - endMs < LateMs;
         e.every = s.cycle.every;
         if (s.phase == "focus") {
-            closeSession(s, endMs, true);
             e.type = "focus_done";
+            if (keepCounting()) {
+                // Keep counting past 00:00 (overtime): the session stays open
+                // and logs the real time; Space or Skip still takes the break.
+                s.over = true;
+                e.next = "focus";
+                e.nextStarted = true;
+                e.overtime = true;
+                e.nextSec = s.lengthSec();
+                e.round = s.round;
+                events << e;
+                break;
+            }
+            closeSession(s, endMs, true);
             e.next = afterFocus(s, endMs, now);
         } else {
             e.type = "break_done";
@@ -262,7 +280,7 @@ QList<TimerEvent> Engine::skip() {
     return mutate([this](TimerState &s, qint64 now) {
         const qint64 at = s.pausedAt ? s.pausedAt : now;
         if (s.phase == "focus") {
-            closeSession(s, at, false);
+            closeSession(s, at, s.over);   // reached 00:00 only when counting on
             // Skipping means "move on now": the break, or with no break the
             // next focus block, starts at once.
             if (afterFocus(s, now, now) == "focus" && s.waiting)
@@ -282,7 +300,7 @@ QList<TimerEvent> Engine::skip() {
 QList<TimerEvent> Engine::stop() {
     return mutate([this](TimerState &s, qint64 now) {
         if (s.phase == "focus" && !s.waiting)
-            closeSession(s, s.pausedAt ? s.pausedAt : now, false);
+            closeSession(s, s.pausedAt ? s.pausedAt : now, s.over);
         s.sessionId = 0;
         endCycle(s);
         enter(s, "focus", 0, false);
@@ -339,8 +357,9 @@ QString Engine::describe(const TimerEvent &e, QString *body) {
     QString title, text;
     if (e.type == "focus_done" && e.next == "focus") {
         title = tr("Focus done · %1 min on %2").arg(e.minutes).arg(e.project);
-        text = e.nextStarted ? tr("Next focus %1 has started.").arg(clock(e.nextSec))
-                             : tr("Press Space or click the bar to start another block.");
+        text = e.overtime ? tr("Keep counting! Space or Skip takes your break.")
+                          : (e.nextStarted ? tr("Next focus %1 has started.").arg(clock(e.nextSec))
+                                           : tr("Press Space or click the bar to start another block."));
     } else if (e.type == "focus_done") {
         title = tr("Focus done · %1 min on %2").arg(e.minutes).arg(e.project);
         const QString what = e.next == "long" ? tr("Long break") : tr("Break");

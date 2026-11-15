@@ -40,6 +40,7 @@ struct TimerState {
     qint64 pausedAt = 0;       // ms since epoch, 0 when not paused
     qint64 pausedTotal = 0;    // ms spent paused in this phase
     int sessionId = 0;         // the open sessions row while focusing
+    bool over = false;          // focus reached 00:00 and keeps counting (overtime)
     QString note;
 
     bool idle() const { return waiting && phase == "focus" && round == 1; }
@@ -64,6 +65,7 @@ struct TimerEvent {
     int every = 4;
     QString project;
     bool fresh = true;     // false when it happened long ago (app was closed)
+    bool overtime = false; // the focus block now keeps counting past 00:00
 };
 
 class Engine {
@@ -86,6 +88,7 @@ public:
     QList<TimerEvent> setNote(const QString &note);
     QList<TimerEvent> usePreset(int presetId);
     QList<TimerEvent> setCustomCycle(int focusSec, int shortSec, int every);
+    bool keepCounting() const;
 
     Cycle presetCycle(int presetId) const;
     Cycle projectCycle(int projectId) const;

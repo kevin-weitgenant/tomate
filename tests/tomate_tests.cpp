@@ -21,6 +21,7 @@ struct Rig {
         return db.scalar("SELECT COUNT(*) FROM sessions WHERE " + where, {}, 0).toInt();
     }
     QVariantMap session(int id) { return db.rows("SELECT * FROM sessions WHERE id = ?", {id}).value(0).toMap(); }
+    void stopAtZero() { db.setSetting("keep_counting", "0"); }   // pre-overtime endings
     void usePreset(const QString &name) {
         engine.usePreset(db.scalar("SELECT id FROM presets WHERE name = ?", {name}).toInt());
     }
@@ -40,8 +41,49 @@ private slots:
         QCOMPARE(s.remainingMs(r.now), 25 * Min);
     }
 
+    void focusKeepsCountingPastZeroByDefault() {
+        Rig r;
+        r.usePreset("Deep");               // 50 / 10 / 20 every 3
+        r.engine.start();
+        r.now += 50 * Min;
+        const auto events = r.engine.tick();
+        QCOMPARE(events.size(), 1);
+        QCOMPARE(events.first().type, QString("focus_done"));
+        QVERIFY(events.first().overtime);
+        QVERIFY(events.first().nextStarted);
+        auto s = r.engine.state();
+        QVERIFY(s.over);
+        QCOMPARE(s.phase, QString("focus"));
+        QVERIFY(s.running());
+
+        // Still the same block, still open, counting up.
+        r.now += 5 * Min;
+        r.engine.tick();
+        s = r.engine.state();
+        QVERIFY(s.over);
+        QCOMPARE(int(s.elapsedMs(r.now) / 1000), 55 * 60);
+        QCOMPARE(r.sessions(), 1);
+
+        // Stopping logs the full 55 minutes as completed.
+        r.engine.stop();
+        QCOMPARE(r.sessions("completed = 1 AND duration_sec = 3300"), 1);
+        QVERIFY(!r.engine.state().over);
+
+        // Skipping from overtime closes the block completed and takes the break.
+        r.engine.start();
+        r.now += 50 * Min;
+        r.engine.tick();
+        QVERIFY(r.engine.state().over);
+        r.now += 2 * Min;
+        r.engine.skip();
+        s = r.engine.state();
+        QCOMPARE(s.phase, QString("short"));
+        QCOMPARE(r.sessions("completed = 1 AND duration_sec = 3120"), 1);
+    }
+
     void focusEndsIntoAnAutomaticBreak() {
         Rig r;
+        r.stopAtZero();
         r.usePreset("Deep");               // 50 / 10 / 20 every 3, breaks start on their own
         r.engine.start();
         r.now += 50 * Min;
@@ -64,6 +106,7 @@ private slots:
 
     void longBreakComesAfterTheLastRound() {
         Rig r;
+        r.stopAtZero();
         r.engine.setCustomCycle(10 * 60, 2 * 60, 2);
         for (int i = 0; i < 2; ++i) {
             r.engine.start();
@@ -80,6 +123,7 @@ private slots:
 
     void customTimesLastOneCycle() {
         Rig r;
+        r.stopAtZero();
         r.engine.setCustomCycle(40 * 60, 8 * 60, 1);
         QVERIFY(r.engine.state().cycle.custom);
         r.engine.start();
@@ -111,6 +155,7 @@ private slots:
 
     void pausedTimeIsNotWork() {
         Rig r;
+        r.stopAtZero();
         r.engine.start();
         r.now += 5 * Min;
         r.engine.pause();
@@ -141,6 +186,7 @@ private slots:
 
     void lateFocusWaitsInsteadOfInventingWork() {
         Rig r;
+        r.stopAtZero();
         r.usePreset("Sprint");
         const int id = r.db.scalar("SELECT id FROM presets WHERE name = 'Sprint'").toInt();
         r.db.exec("UPDATE presets SET auto_focus = 1 WHERE id = ?", {id});
@@ -193,6 +239,7 @@ private slots:
 
     void focusOnlyEndsWithoutABreak() {
         Rig r;
+        r.stopAtZero();
         r.usePreset("Focus only");             // 50 minutes, no breaks
         QVERIFY(!r.engine.state().cycle.hasBreaks());
         r.engine.start();
@@ -213,6 +260,7 @@ private slots:
 
     void focusOnlyCanChainBlocks() {
         Rig r;
+        r.stopAtZero();
         const int id = r.db.scalar("SELECT id FROM presets WHERE name = 'Focus only'").toInt();
         r.db.exec("UPDATE presets SET auto_focus = 1 WHERE id = ?", {id});
         r.engine.usePreset(id);
@@ -226,6 +274,7 @@ private slots:
 
     void aZeroShortBreakStillKeepsTheLongOne() {
         Rig r;
+        r.stopAtZero();
         r.engine.setCustomCycle(10 * 60, 0, 2); // long break stays Classic's 15
         r.engine.start();
         r.now += 10 * Min;
