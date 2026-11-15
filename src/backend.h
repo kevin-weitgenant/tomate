@@ -21,6 +21,7 @@ class Backend : public QObject {
     Q_PROPERTY(bool idle READ idle NOTIFY ticked)
     Q_PROPERTY(int remainingSec READ remainingSec NOTIFY ticked)
     Q_PROPERTY(int lengthSec READ lengthSec NOTIFY ticked)
+    Q_PROPERTY(int workedSec READ workedSec NOTIFY ticked)
     Q_PROPERTY(double progress READ progress NOTIFY ticked)
     Q_PROPERTY(int round READ round NOTIFY ticked)
     Q_PROPERTY(int every READ every NOTIFY ticked)
@@ -49,6 +50,8 @@ public:
     bool idle() const { return m_state.idle(); }
     int remainingSec() const;
     int lengthSec() const { return m_state.lengthSec(); }
+    // Seconds worked in the open focus block (for the stop prompt).
+    int workedSec() const { return m_state.phase == "focus" && m_state.sessionId ? int(m_state.elapsedMs(m_now) / 1000) : 0; }
     double progress() const;
     int round() const { return m_state.round; }
     int every() const { return m_state.cycle.every; }
@@ -70,7 +73,7 @@ public:
     // Timer
     Q_INVOKABLE void toggle();
     Q_INVOKABLE void skip();
-    Q_INVOKABLE void stop();
+    Q_INVOKABLE void stop(bool discard = false);
     Q_INVOKABLE void setProject(int id);
     Q_INVOKABLE void setNote(const QString &note);
     Q_INVOKABLE void usePreset(int id);

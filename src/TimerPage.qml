@@ -9,6 +9,15 @@ Item {
     id: page
     property bool editing: false
 
+    function askStop() {
+        // An unfinished focus block with a minute or more in it is worth asking
+        // about: keep the partial time on the calendar, or drop it entirely.
+        if (backend.phase === "focus" && backend.workedSec >= 60 && !backend.idle)
+            stopSheet.open()
+        else
+            backend.stop(false)
+    }
+
     function openEditor() {
         page.editing = true
         focusEdit.text = win.minutes(backend.cycle.focusMin)
@@ -309,7 +318,7 @@ Item {
                 onClicked: backend.toggle()
             }
             Btn { text: qsTr("Skip"); kbd: "S"; onClicked: backend.skip() }
-            Btn { text: qsTr("Stop"); kbd: "X"; enabledState: !backend.idle; onClicked: backend.stop() }
+            Btn { text: qsTr("Stop"); kbd: "X"; enabledState: !backend.idle; onClicked: page.askStop() }
         }
 
         // Today ------------------------------------------------------------
@@ -354,4 +363,42 @@ Item {
     property Item roundsEdit
 
     ProjectPicker { id: picker }
+
+    // Stop: keep the partial block, or throw it away.
+    Sheet {
+        id: stopSheet
+        title: qsTr("Stop this pomodoro?")
+        Column {
+            width: parent.width
+            spacing: 12
+            Text {
+                width: parent.width
+                wrapMode: Text.WordWrap
+                color: ui.text
+                text: qsTr("You worked %1 of %2.").arg(win.clock(backend.workedSec)).arg(win.clock(backend.lengthSec))
+            }
+            RowLayout {
+                width: parent.width
+                spacing: 8
+                Btn {
+                    primary: true
+                    Layout.fillWidth: true
+                    text: qsTr("Keep the time")
+                    onClicked: { backend.stop(false); stopSheet.close() }
+                }
+                Btn {
+                    Layout.fillWidth: true
+                    text: qsTr("Discard")
+                    onClicked: { backend.stop(true); stopSheet.close() }
+                }
+            }
+            Text {
+                width: parent.width
+                wrapMode: Text.WordWrap
+                color: ui.dim
+                font.pixelSize: 11
+                text: qsTr("Keep logs it on the calendar as an unfinished block; Discard removes it completely. Closing this dialog cancels.")
+            }
+        }
+    }
 }

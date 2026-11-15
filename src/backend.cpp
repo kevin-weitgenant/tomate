@@ -141,7 +141,7 @@ void Backend::reloadData() {
 
 void Backend::toggle() { after(m_engine.toggle()); }
 void Backend::skip() { after(m_engine.skip()); }
-void Backend::stop() { after(m_engine.stop()); }
+void Backend::stop(bool discard) { after(m_engine.stop(discard)); }
 void Backend::setProject(int id) { after(m_engine.setProject(id)); }
 void Backend::setNote(const QString &note) { after(m_engine.setNote(note)); }
 void Backend::usePreset(int id) { after(m_engine.usePreset(id)); }

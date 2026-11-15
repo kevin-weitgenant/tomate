@@ -297,10 +297,14 @@ QList<TimerEvent> Engine::skip() {
     });
 }
 
-QList<TimerEvent> Engine::stop() {
-    return mutate([this](TimerState &s, qint64 now) {
-        if (s.phase == "focus" && !s.waiting)
-            closeSession(s, s.pausedAt ? s.pausedAt : now, s.over);
+QList<TimerEvent> Engine::stop(bool discard) {
+    return mutate([this, discard](TimerState &s, qint64 now) {
+        if (s.phase == "focus" && !s.waiting) {
+            if (discard && s.sessionId)
+                m_db.exec("DELETE FROM sessions WHERE id = ?", {s.sessionId});
+            else
+                closeSession(s, s.pausedAt ? s.pausedAt : now, s.over);
+        }
         s.sessionId = 0;
         endCycle(s);
         enter(s, "focus", 0, false);

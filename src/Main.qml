@@ -93,7 +93,7 @@ ApplicationWindow {
     // The timer keys work from every screen.
     Shortcut { sequence: "Space"; context: Qt.ApplicationShortcut; enabled: !win.typing && !win.modal; onActivated: backend.toggle() }
     Shortcut { sequence: "S"; context: Qt.ApplicationShortcut; enabled: !win.typing && !win.modal; onActivated: backend.skip() }
-    Shortcut { sequence: "X"; context: Qt.ApplicationShortcut; enabled: !win.typing && !win.modal; onActivated: backend.stop() }
+    Shortcut { sequence: "X"; context: Qt.ApplicationShortcut; enabled: !win.typing && !win.modal; onActivated: timerPage.askStop() }
 
     Item {
         anchors.fill: parent
@@ -157,7 +157,7 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 currentIndex: win.page
-                TimerPage {}
+                TimerPage { id: timerPage }
                 CalendarPage {}
                 ProjectsPage {}
                 PresetsPage {}

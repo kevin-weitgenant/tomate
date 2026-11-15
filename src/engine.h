@@ -83,7 +83,7 @@ public:
     QList<TimerEvent> start();
     QList<TimerEvent> pause();
     QList<TimerEvent> skip();
-    QList<TimerEvent> stop();
+    QList<TimerEvent> stop(bool discard = false);
     QList<TimerEvent> setProject(int projectId);
     QList<TimerEvent> setNote(const QString &note);
     QList<TimerEvent> usePreset(int presetId);
