@@ -38,7 +38,8 @@ QVariantMap Backend::cycle() const {
     return {{"presetId", c.presetId}, {"name", c.name}, {"custom", c.custom},
             {"focusSec", c.focusSec}, {"shortSec", c.shortSec}, {"longSec", c.longSec},
             {"focusMin", c.focusSec / 60.0}, {"shortMin", c.shortSec / 60.0}, {"longMin", c.longSec / 60.0},
-            {"every", c.every}, {"autoBreaks", c.autoBreaks}, {"autoFocus", c.autoFocus}};
+            {"every", c.every}, {"autoBreaks", c.autoBreaks}, {"autoFocus", c.autoFocus},
+            {"breaks", c.hasBreaks()}};
 }
 
 double Backend::endsAt() const {
@@ -191,8 +192,11 @@ void Backend::deleteProject(int id) {
 // Presets ----------------------------------------------------------------
 
 static QVariantList presetArgs(const QVariantMap &p) {
-    auto sec = [&](const char *k, double fallback) { return qMax(1, int(p.value(k, fallback).toDouble() * 60)); };
-    return {p.value("name").toString().trimmed(), sec("focusMin", 25), sec("shortMin", 5), sec("longMin", 15),
+    // Focus is at least a second; a break of 0 means no break.
+    auto sec = [&](const char *k, double fallback, int least) {
+        return qMax(least, int(p.value(k, fallback).toDouble() * 60));
+    };
+    return {p.value("name").toString().trimmed(), sec("focusMin", 25, 1), sec("shortMin", 5, 0), sec("longMin", 15, 0),
             qBound(1, p.value("every", 4).toInt(), 99), p.value("autoBreaks", true).toBool() ? 1 : 0,
             p.value("autoFocus", false).toBool() ? 1 : 0};
 }

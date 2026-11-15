@@ -10,7 +10,8 @@ Row {
         if (!preset) return out
         for (let i = 0; i < preset.every; i++) {
             out.push([preset.focusMin, ui.accent])
-            out.push(i === preset.every - 1 ? [preset.longMin, ui.magenta] : [preset.shortMin, ui.green])
+            const brk = i === preset.every - 1 ? [preset.longMin, ui.magenta] : [preset.shortMin, ui.green]
+            if (brk[0] > 0) out.push(brk)   // a 0-minute break isn't drawn
         }
         return out
     }

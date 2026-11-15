@@ -20,7 +20,7 @@ Item {
     function applyEditor() {
         const f = parseFloat(focusEdit.text.replace(",", ".")), b = parseFloat(breakEdit.text.replace(",", "."))
         const r = parseInt(roundsEdit.text)
-        if (f > 0 && b > 0 && r > 0)
+        if (f > 0 && b >= 0 && r > 0)
             backend.setCustomCycle(f, b, r)
         page.editing = false
     }
@@ -177,15 +177,18 @@ Item {
                     anchors.horizontalCenter: parent.horizontalCenter
                     color: ui.dim
                     font.pixelSize: 12
-                    text: backend.idle ? qsTr("Space to start")
+                    // Rounds only mean something when there are breaks between blocks.
+                    readonly property string rounds: backend.cycle.breaks ? qsTr("round %1 of %2 · ").arg(backend.round).arg(backend.every) : ""
+                    text: backend.idle ? (backend.cycle.breaks ? qsTr("Space to start") : qsTr("no breaks · Space to start"))
                         : backend.waiting ? qsTr("ready · Space to start")
-                        : backend.paused ? qsTr("round %1 of %2 · Space to resume").arg(backend.round).arg(backend.every)
-                        : qsTr("round %1 of %2 · ends %3").arg(backend.round).arg(backend.every).arg(win.timeOf(backend.endsAt))
+                        : backend.paused ? rounds + qsTr("Space to resume")
+                        : rounds + qsTr("ends %1").arg(win.timeOf(backend.endsAt))
                 }
                 Row {
                     anchors.horizontalCenter: parent.horizontalCenter
                     spacing: 6
                     topPadding: 4
+                    visible: backend.cycle.breaks
                     Repeater {
                         model: Math.min(backend.every, 12)
                         delegate: Rectangle {
@@ -253,7 +256,7 @@ Item {
                 }
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: qsTr("minutes · Esc cancels")
+                    text: qsTr("minutes · break 0 = no break · Esc cancels")
                     color: ui.dim
                     font.pixelSize: 11
                 }
@@ -277,7 +280,7 @@ Item {
                 delegate: Btn {
                     required property var modelData
                     implicitHeight: 28
-                    text: modelData.name + " " + win.minutes(modelData.focusMin) + "/" + win.minutes(modelData.shortMin)
+                    text: win.presetLabel(modelData)
                     checked: !backend.cycle.custom && backend.cycle.presetId === modelData.id
                     onClicked: backend.usePreset(modelData.id)
                 }
@@ -286,7 +289,8 @@ Item {
                 implicitHeight: 28
                 visible: backend.cycle.custom
                 checked: true
-                text: qsTr("Custom %1/%2").arg(win.minutes(backend.cycle.focusMin)).arg(win.minutes(backend.cycle.shortMin))
+                text: backend.cycle.breaks ? qsTr("Custom %1/%2").arg(win.minutes(backend.cycle.focusMin)).arg(win.minutes(backend.cycle.shortMin))
+                                           : qsTr("Custom %1").arg(win.minutes(backend.cycle.focusMin))
                 onClicked: page.openEditor()
             }
             Btn { implicitHeight: 28; visible: !backend.cycle.custom; text: qsTr("Custom…"); kbd: "E"; onClicked: page.openEditor() }

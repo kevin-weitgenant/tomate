@@ -73,6 +73,7 @@ int status(Db &db, Engine &engine, bool json) {
                   {"percentage", qBound(0, pct, 100)}, {"phase", s.phase}, {"remaining", left},
                   {"round", s.round}, {"every", s.cycle.every}, {"project", project},
                   {"paused", s.paused()}, {"waiting", s.waiting}, {"idle", s.idle()}, {"ends", ends},
+                  {"breaks", s.cycle.hasBreaks()},
                   {"note", s.note}, {"length", s.lengthSec()}, {"today", today},
                   {"goal", db.setting("daily_goal_min", "240").toInt() * 60},
                   {"cycle", s.cycle.custom ? QString("Custom") : s.cycle.name},

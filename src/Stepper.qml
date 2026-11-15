@@ -11,6 +11,8 @@ RowLayout {
     property real from: 1
     property real to: 600
     property string suffix: ""
+    // Shown instead of the suffix at 0, e.g. "no break".
+    property string zeroLabel: ""
     property bool decimals: true
     signal edited(real value)
 
@@ -33,7 +35,7 @@ RowLayout {
         MouseArea { id: minusMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.commit(root.value - root.step) }
     }
     Rectangle {
-        implicitWidth: 86; implicitHeight: 28
+        implicitWidth: 116; implicitHeight: 28
         color: valueInput.activeFocus ? ui.deep : "transparent"
         border.color: valueInput.activeFocus ? ui.accent : "transparent"
         border.width: valueInput.activeFocus ? 2 : 0
@@ -54,7 +56,11 @@ RowLayout {
                 Keys.onDownPressed: root.commit(root.value - root.step)
                 Keys.onEscapePressed: { text = win.minutes(root.value); focus = false }
             }
-            Text { text: root.suffix; color: ui.dim; visible: root.suffix !== "" }
+            Text {
+                text: root.value === 0 && root.zeroLabel !== "" ? root.zeroLabel : root.suffix
+                color: ui.dim
+                visible: text !== ""
+            }
         }
     }
     Rectangle {

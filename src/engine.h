@@ -20,6 +20,7 @@ struct Cycle {
     bool autoFocus = false;
     bool custom = false;
 
+    bool hasBreaks() const { return shortSec > 0 || longSec > 0; }
     int lengthOf(const QString &phase) const {
         return phase == "focus" ? focusSec : phase == "short" ? shortSec : longSec;
     }
@@ -103,6 +104,7 @@ private:
     void openSession(TimerState &s, qint64 startMs);
     void closeSession(TimerState &s, qint64 endMs, bool completed);
     void endCycle(TimerState &s);
+    QString afterFocus(TimerState &s, qint64 at, qint64 now);
     int validProject(int projectId) const;
     QList<TimerEvent> mutate(const std::function<void(TimerState &, qint64)> &change);
 

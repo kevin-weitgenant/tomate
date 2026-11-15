@@ -75,13 +75,16 @@ BarWidget {
     if (phase === "idle") {
       lines.push("Tomate · " + project, goal, strings.t("hintIdle"))
     } else if (phase === "ready") {
-      lines.push(strings.t("ready").arg(phaseName(s.phase)) + " · " + project,
-                 strings.t("round").arg(s.round).arg(s.every), strings.t("hintReady"))
+      lines.push(strings.t("ready").arg(phaseName(s.phase)) + " · " + project)
+      if (s.breaks !== false) lines.push(strings.t("round").arg(s.round).arg(s.every))
+      lines.push(strings.t("hintReady"))
     } else if (phase === "paused") {
       lines.push(strings.t("paused") + " · " + project, strings.t("pausedNote"), strings.t("hintPaused"))
     } else {
+      // Rounds only mean something when there are breaks between blocks.
+      var when = s.ends ? strings.t("ends").arg(s.ends) : ""
       lines.push(phaseName(s.phase) + (s.phase === "focus" ? " · " + project : ""),
-                 strings.t("round").arg(s.round).arg(s.every) + (s.ends ? " · " + strings.t("ends").arg(s.ends) : ""))
+                 s.breaks !== false ? strings.t("round").arg(s.round).arg(s.every) + (when ? " · " + when : "") : when)
       if (s.phase === "focus" && s.note) lines.push("“" + plain(s.note) + "”")
       lines.push(goal, strings.t("hintRunning"))
     }

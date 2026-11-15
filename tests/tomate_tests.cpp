@@ -33,7 +33,7 @@ private slots:
     void seedsPresetsAndAProject() {
         Rig r;
         QVERIFY(r.db.ok());
-        QCOMPARE(r.db.scalar("SELECT COUNT(*) FROM presets").toInt(), 3);
+        QCOMPARE(r.db.scalar("SELECT COUNT(*) FROM presets").toInt(), 4);
         const auto s = r.engine.state();
         QVERIFY(s.idle());
         QCOMPARE(s.cycle.name, QString("Classic"));
@@ -189,6 +189,64 @@ private slots:
         QCOMPARE(r.engine.state().phase, QString("focus"));
         QVERIFY(r.engine.state().running());
         QCOMPARE(r.engine.state().round, 2);
+    }
+
+    void focusOnlyEndsWithoutABreak() {
+        Rig r;
+        r.usePreset("Focus only");             // 50 minutes, no breaks
+        QVERIFY(!r.engine.state().cycle.hasBreaks());
+        r.engine.start();
+        r.now += 50 * Min;
+        const auto events = r.engine.tick();
+        QCOMPARE(events.size(), 1);
+        QCOMPARE(events.first().type, QString("focus_done"));
+        QCOMPARE(events.first().next, QString("focus"));
+        QVERIFY(!events.first().nextStarted);
+        const auto s = r.engine.state();
+        QVERIFY(s.idle());                     // back to ready, no break timer
+        QCOMPARE(r.sessions("completed = 1 AND duration_sec = 3000"), 1);
+        // Nothing more happens however long you wait.
+        r.now += 3 * 60 * Min;
+        QVERIFY(r.engine.tick().isEmpty());
+        QCOMPARE(r.sessions(), 1);
+    }
+
+    void focusOnlyCanChainBlocks() {
+        Rig r;
+        const int id = r.db.scalar("SELECT id FROM presets WHERE name = 'Focus only'").toInt();
+        r.db.exec("UPDATE presets SET auto_focus = 1 WHERE id = ?", {id});
+        r.engine.usePreset(id);
+        r.engine.start();
+        r.now += 50 * Min;
+        r.engine.tick();
+        QVERIFY(r.engine.state().running());
+        QCOMPARE(r.engine.state().phase, QString("focus"));
+        QCOMPARE(r.sessions(), 2);             // the finished one and the new one
+    }
+
+    void aZeroShortBreakStillKeepsTheLongOne() {
+        Rig r;
+        r.engine.setCustomCycle(10 * 60, 0, 2); // long break stays Classic's 15
+        r.engine.start();
+        r.now += 10 * Min;
+        r.engine.tick();
+        QCOMPARE(r.engine.state().phase, QString("focus"));
+        QCOMPARE(r.engine.state().round, 2);
+        r.engine.start();
+        r.now += 10 * Min;
+        r.engine.tick();
+        QCOMPARE(r.engine.state().phase, QString("long"));
+    }
+
+    void skipWithNoBreakStartsTheNextBlock() {
+        Rig r;
+        r.usePreset("Focus only");
+        r.engine.start();
+        r.now += 20 * Min;
+        r.engine.skip();
+        QVERIFY(r.engine.state().running());
+        QCOMPARE(r.engine.state().phase, QString("focus"));
+        QCOMPARE(r.sessions("duration_sec = 1200"), 1);
     }
 
     void themeReadsThePalette() {

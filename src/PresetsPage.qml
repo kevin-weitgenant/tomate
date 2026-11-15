@@ -68,7 +68,9 @@ Item {
                             spacing: 4
                             Text { text: card.modelData.name; color: ui.bright; font.bold: true; elide: Text.ElideRight; width: parent.width }
                             Text {
-                                text: qsTr("%1 · %2 · %3 every %4").arg(win.minutes(card.modelData.focusMin)).arg(win.minutes(card.modelData.shortMin))
+                                text: card.modelData.shortMin === 0 && card.modelData.longMin === 0
+                                      ? qsTr("%1 min focus · no breaks").arg(win.minutes(card.modelData.focusMin))
+                                      : qsTr("%1 · %2 · %3 every %4").arg(win.minutes(card.modelData.focusMin)).arg(win.minutes(card.modelData.shortMin))
                                         .arg(win.minutes(card.modelData.longMin)).arg(card.modelData.every)
                                 color: ui.dim; font.pixelSize: 11
                             }
@@ -138,6 +140,11 @@ Item {
                         }
                     }
                     Text {
+                        text: qsTr("Set a break to 0 to skip it. With both at 0, a block simply ends, with no break timer.")
+                        color: ui.dim; font.pixelSize: 11
+                        Layout.fillWidth: true; wrapMode: Text.WordWrap
+                    }
+                    Text {
                         visible: page.selected && page.selected.projects > 0
                         text: page.selected ? qsTr("Default for %n project(s).", "", page.selected.projects) : ""
                         color: ui.dim; font.pixelSize: 11
@@ -152,11 +159,11 @@ Item {
                                   value: page.selected ? page.selected.focusMin : 0; onEdited: v => page.update("focusMin", v) }
                         Toggle { Layout.fillWidth: true; label: qsTr("Start breaks automatically")
                                  checked: page.selected ? page.selected.autoBreaks : false; onToggled: c => page.update("autoBreaks", c) }
-                        Stepper { Layout.fillWidth: true; label: qsTr("Short break"); suffix: qsTr("min"); from: 0.5; to: 600
+                        Stepper { Layout.fillWidth: true; label: qsTr("Short break"); suffix: qsTr("min"); zeroLabel: qsTr("no break"); from: 0; to: 600
                                   value: page.selected ? page.selected.shortMin : 0; onEdited: v => page.update("shortMin", v) }
                         Toggle { Layout.fillWidth: true; label: qsTr("Start next focus automatically")
                                  checked: page.selected ? page.selected.autoFocus : false; onToggled: c => page.update("autoFocus", c) }
-                        Stepper { Layout.fillWidth: true; label: qsTr("Long break"); suffix: qsTr("min"); from: 0.5; to: 600
+                        Stepper { Layout.fillWidth: true; label: qsTr("Long break"); suffix: qsTr("min"); zeroLabel: qsTr("no break"); from: 0; to: 600
                                   value: page.selected ? page.selected.longMin : 0; onEdited: v => page.update("longMin", v) }
                         Item { implicitHeight: 1 }
                         Stepper { Layout.fillWidth: true; label: qsTr("Long break every"); suffix: qsTr("rounds"); from: 1; to: 99; decimals: false

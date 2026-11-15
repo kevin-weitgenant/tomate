@@ -133,6 +133,9 @@ bool Db::migrate() {
              note TEXT NOT NULL DEFAULT '');
            CREATE INDEX sessions_started ON sessions(started_at);
            CREATE TABLE settings(key TEXT PRIMARY KEY, value TEXT NOT NULL);)",
+        // A preset for focusing without breaks: a block ends and that's it.
+        R"(INSERT INTO presets(name, focus_sec, short_sec, long_sec, long_every, auto_breaks, auto_focus, sort)
+           VALUES('Focus only', 3000, 0, 0, 1, 0, 0, (SELECT COALESCE(MAX(sort), 0) + 1 FROM presets));)",
     };
 
     int version = scalar("PRAGMA user_version", {}, 0).toInt();

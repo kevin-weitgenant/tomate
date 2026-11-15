@@ -71,6 +71,10 @@ ApplicationWindow {
         // 25 → "25", 0.5 → "0.5": presets are whole minutes unless typed otherwise.
         return Number.isInteger(v) ? String(v) : v.toFixed(1)
     }
+    // "Classic 25/5", or "Focus only 50" for a preset without breaks.
+    function presetLabel(p) {
+        return p.name + " " + minutes(p.focusMin) + (p.shortMin > 0 ? "/" + minutes(p.shortMin) : "")
+    }
     function timeOf(sec) {
         return Qt.formatTime(new Date(sec * 1000), "HH:mm")
     }

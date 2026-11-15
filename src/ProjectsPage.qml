@@ -143,7 +143,7 @@ Item {
                 delegate: Btn {
                     required property var modelData
                     implicitHeight: 28
-                    text: modelData.name + " " + win.minutes(modelData.focusMin) + "/" + win.minutes(modelData.shortMin)
+                    text: win.presetLabel(modelData)
                     checked: editor.presetId === modelData.id
                     onClicked: editor.presetId = modelData.id
                 }

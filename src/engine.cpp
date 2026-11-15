@@ -26,8 +26,9 @@ Cycle Cycle::fromJson(const QJsonObject &o) {
     c.presetId = o.value("presetId").toInt();
     c.name = o.value("name").toString();
     c.focusSec = qMax(1, o.value("focusSec").toInt(1500));
-    c.shortSec = qMax(1, o.value("shortSec").toInt(300));
-    c.longSec = qMax(1, o.value("longSec").toInt(900));
+    // A break of 0 means no break.
+    c.shortSec = qMax(0, o.value("shortSec").toInt(300));
+    c.longSec = qMax(0, o.value("longSec").toInt(900));
     c.every = qMax(1, o.value("every").toInt(4));
     c.autoBreaks = o.value("autoBreaks").toBool(true);
     c.autoFocus = o.value("autoFocus").toBool(false);
@@ -80,8 +81,8 @@ Cycle Engine::presetCycle(int presetId) const {
     c.presetId = p.value("id").toInt();
     c.name = p.value("name").toString();
     c.focusSec = qMax(1, p.value("focus_sec").toInt());
-    c.shortSec = qMax(1, p.value("short_sec").toInt());
-    c.longSec = qMax(1, p.value("long_sec").toInt());
+    c.shortSec = qMax(0, p.value("short_sec").toInt());
+    c.longSec = qMax(0, p.value("long_sec").toInt());
     c.every = qMax(1, p.value("long_every").toInt());
     c.autoBreaks = p.value("auto_breaks").toBool();
     c.autoFocus = p.value("auto_focus").toBool();
@@ -156,11 +157,29 @@ void Engine::enter(TimerState &s, const QString &phase, qint64 startMs, bool aut
         openSession(s, startMs);
 }
 
-// Custom times and preset picks last one cycle; then the project's own
-// preset (with any edits made since) takes over again.
+// What follows a focus block: its break, or, when that break is set to 0,
+// straight on to the next focus block as if the break had come and gone.
+// Returns the phase entered.
+QString Engine::afterFocus(TimerState &s, qint64 at, qint64 now) {
+    const QString next = s.round >= s.cycle.every ? "long" : "short";
+    if (s.cycle.lengthOf(next) > 0) {
+        enter(s, next, at, s.cycle.autoBreaks);
+        return next;
+    }
+    if (next == "long")
+        endCycle(s);
+    else
+        ++s.round;
+    enter(s, "focus", at, s.cycle.autoFocus && now - at < LateMs);
+    return "focus";
+}
+
+// Custom times last one cycle; then the preset they were set on comes back.
+// A preset you picked stays until you pick another or switch project. Either
+// way it is re-read, so edits made since take effect.
 void Engine::endCycle(TimerState &s) {
     s.round = 1;
-    s.cycle = projectCycle(s.projectId);
+    s.cycle = presetCycle(s.cycle.presetId);
 }
 
 void Engine::advance(TimerState &s, qint64 now, QList<TimerEvent> &events) {
@@ -174,8 +193,7 @@ void Engine::advance(TimerState &s, qint64 now, QList<TimerEvent> &events) {
         if (s.phase == "focus") {
             closeSession(s, endMs, true);
             e.type = "focus_done";
-            e.next = s.round >= s.cycle.every ? "long" : "short";
-            enter(s, e.next, endMs, s.cycle.autoBreaks);
+            e.next = afterFocus(s, endMs, now);
         } else {
             e.type = "break_done";
             if (s.phase == "long")
@@ -245,7 +263,12 @@ QList<TimerEvent> Engine::skip() {
         const qint64 at = s.pausedAt ? s.pausedAt : now;
         if (s.phase == "focus") {
             closeSession(s, at, false);
-            enter(s, s.round >= s.cycle.every ? "long" : "short", now, true);
+            // Skipping means "move on now": the break, or with no break the
+            // next focus block, starts at once.
+            if (afterFocus(s, now, now) == "focus" && s.waiting)
+                enter(s, "focus", now, true);
+            else if (s.waiting)
+                enter(s, s.phase, now, true);
         } else {
             if (s.phase == "long")
                 endCycle(s);
@@ -298,7 +321,7 @@ QList<TimerEvent> Engine::usePreset(int presetId) {
 QList<TimerEvent> Engine::setCustomCycle(int focusSec, int shortSec, int every) {
     return mutate([this, focusSec, shortSec, every](TimerState &s, qint64) {
         s.cycle.focusSec = qBound(1, focusSec, 24 * 3600);
-        s.cycle.shortSec = qBound(1, shortSec, 24 * 3600);
+        s.cycle.shortSec = qBound(0, shortSec, 24 * 3600);
         s.cycle.every = qBound(1, every, 99);
         s.cycle.custom = true;
         s.cycle.name = QCoreApplication::translate("Engine", "Custom");
@@ -314,7 +337,11 @@ static QString clock(int sec) {
 QString Engine::describe(const TimerEvent &e, QString *body) {
     auto tr = [](const char *s) { return QCoreApplication::translate("Engine", s); };
     QString title, text;
-    if (e.type == "focus_done") {
+    if (e.type == "focus_done" && e.next == "focus") {
+        title = tr("Focus done · %1 min on %2").arg(e.minutes).arg(e.project);
+        text = e.nextStarted ? tr("Next focus %1 has started.").arg(clock(e.nextSec))
+                             : tr("Press Space or click the bar to start another block.");
+    } else if (e.type == "focus_done") {
         title = tr("Focus done · %1 min on %2").arg(e.minutes).arg(e.project);
         const QString what = e.next == "long" ? tr("Long break") : tr("Break");
         text = (e.nextStarted ? tr("%1 %2 has started.") : tr("%1 %2 is ready. Press Space to start."))
