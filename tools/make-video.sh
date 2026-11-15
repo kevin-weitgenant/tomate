@@ -1,7 +1,7 @@
 #!/bin/bash
 # Builds a short preview video (for a post) from docs/screenshots:
 # title, captioned screens, the bar states, and the GitHub link, with
-# crossfades and a slow push-in on each slide. Output: $1 (default
+# crossfades between still slides. Output: $1 (default
 # ~/Videos/tomate-preview.mp4).
 set -euo pipefail
 
@@ -79,8 +79,8 @@ inputs=() filters="" prev="" offset=0
 for i in "${!DUR[@]}"; do
   d=${DUR[$i]}
   inputs+=(-loop 1 -framerate $FPS -t "$d" -i "$WORK/0$i.png")
-  # Slow push-in: render from a 2x source so the zoom doesn't shimmer.
-  filters+="[$i:v]scale=$((W*2)):$((H*2)),zoompan=z='1+0.035*on/($d*$FPS)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=${W}x${H}:fps=$FPS,format=yuv420p,setsar=1[v$i];"
+  # Still slides: a zoom on screenshots moves in whole pixels and shakes.
+  filters+="[$i:v]fps=$FPS,format=yuv420p,setsar=1[v$i];"
 done
 for i in "${!DUR[@]}"; do
   [[ $i -eq 0 ]] && { prev="v0"; offset=$(awk "BEGIN{print ${DUR[0]} - $FADE}"); continue; }
