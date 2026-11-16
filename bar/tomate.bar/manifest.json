@@ -5,7 +5,7 @@
   "version": "0.1.0",
   "author": "Kevin Weitgenant",
   "license": "MIT",
-  "description": "The running Tomate Pomodoro timer in the Omarchy bar: countdown, project and phase, with click to start or pause.",
+  "description": "The running Tomate Pomodoro timer in the Omarchy bar: countdown, project and phase, with click to open a timer popup.",
   "kinds": [
     "bar-widget"
   ],
@@ -14,7 +14,7 @@
   },
   "barWidget": {
     "displayName": "Tomate",
-    "description": "Countdown of the running focus block or break. Left-click starts or pauses, right-click opens Tomate.",
+    "description": "Countdown of the running focus block or break. Left-click opens the timer popup, right-click opens Tomate.",
     "category": "Status",
     "allowMultiple": false,
     "defaultSection": "centerEnd",

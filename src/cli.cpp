@@ -163,7 +163,8 @@ void help() {
              "  show                bring the window to this workspace, opening it if needed\n"
              "  status [--json]     what the timer is doing (for the bar)\n"
              "  toggle              start or pause\n"
-             "  start | pause | skip | stop\n"
+             "  start | pause | skip\n"
+             "  stop [--discard]    stop; --discard drops the partial block\n"
              "  project <name>      switch the timer to a project\n"
              "  report [--today|--week|--month] [--json]\n"
              "  export --csv [--from YYYY-MM-DD] [--to YYYY-MM-DD]\n\n"
@@ -220,7 +221,7 @@ int Cli::run(const QStringList &args) {
                              : cmd == "start"  ? engine.start()
                              : cmd == "pause"  ? engine.pause()
                              : cmd == "skip"   ? engine.skip()
-                                               : engine.stop();
+                                               : engine.stop(args.contains("--discard"));
     Engine::notify(events, db);
     return status(db, engine, json);
 }

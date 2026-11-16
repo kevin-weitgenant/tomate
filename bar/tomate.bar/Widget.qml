@@ -57,6 +57,19 @@ BarWidget {
     return String(value || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
   }
   function phaseName(p) { return strings.t(p === "short" ? "short" : p === "long" ? "long" : "focus") }
+  function openWindow() {
+    Quickshell.execDetached(["bash", Qt.resolvedUrl("open.sh").toString().replace("file://", "")])
+  }
+  // The popup's primary button: what it says and what it does, by phase.
+  readonly property string mainAction: !status || phase === "idle" || phase === "ready" ? strings.t("start")
+    : phase === "paused" ? strings.t("resume") : strings.t("pause")
+  // Stop asks before it stops — same rule as the app's stop sheet.
+  property bool askStop: false
+  readonly property real workedSec: status && !status.waiting && !status.idle ? Math.max(0, status.length - status.remaining) : 0
+  function stop() {
+    if (phase === "focus" && workedSec >= 60) askStop = true
+    else run('exec "$T" stop >/dev/null')
+  }
 
   readonly property string label: {
     if (!status || phase === "idle" || vertical) return ""
@@ -102,6 +115,12 @@ BarWidget {
     } catch (e) {}
     root.available = false
   }
+  // Left-click opens the popup; right-click still opens the window.
+  property bool popupOpen: false
+  // PopupCard.close() delegates here on outside-click dismissal; without it
+  // the card's `open` binding is destroyed and the popup never reopens.
+  function close() { popupOpen = false; askStop = false }
+
   function refresh() { if (!statusProc.running) statusProc.running = true }
   function run(args) {
     Quickshell.execDetached(["sh", "-c", root.tomateCommand + args])
@@ -111,7 +130,7 @@ BarWidget {
     if (button === Qt.RightButton)
       Quickshell.execDetached(["bash", Qt.resolvedUrl("open.sh").toString().replace("file://", "")])
     else if (button === Qt.LeftButton)
-      run('exec "$T" toggle >/dev/null')
+      root.popupOpen = !root.popupOpen
   }
 
   // Theme colours beyond the accent: green for short breaks, magenta for long
@@ -212,6 +231,195 @@ BarWidget {
         font.pixelSize: Style.font.body
         renderType: Text.NativeRendering
       }
+    }
+  }
+
+  // Left-click popup (design B: big timer). The time is the hero; Start /
+  // Pause / Resume is the primary button, Stop secondary; the header carries
+  // Skip and Maximize (opens the full Tomate window, as the old right-click).
+  PopupCard {
+    id: popup
+    anchorItem: root
+    bar: root.bar
+    owner: root
+    open: root.popupOpen
+    contentWidth: popup.fittedContentWidth(Style.space(300))
+    contentHeight: popup.fittedContentHeight(popupColumn.implicitHeight)
+
+    onOpenChanged: if (!open) root.close()
+
+    Column {
+      id: popupColumn
+      anchors.fill: parent
+      spacing: Style.space(8)
+
+      // ---- Stop confirmation, mirroring the app's stop sheet. ----
+      // Same rule as TimerPage.askStop: an unfinished focus block with a
+      // minute or more in it is worth asking about — keep the partial time
+      // on the calendar, or drop it entirely.
+      Column {
+        visible: root.askStop
+        width: parent.width
+        spacing: Style.space(8)
+
+        Text {
+          width: parent.width
+          textFormat: Text.PlainText
+          text: strings.t("stopQ")
+          color: root.foreground
+          font.bold: true
+          font.family: root.bar ? root.bar.fontFamily : Style.font.family
+          font.pixelSize: Style.font.body
+        }
+        Text {
+          width: parent.width
+          wrapMode: Text.WordWrap
+          textFormat: Text.PlainText
+          text: root.status ? strings.t("stopWorked").arg(root.clock(root.status.length - root.status.remaining)).arg(root.clock(root.status.length)) : ""
+          color: Qt.darker(root.foreground, 1.3)
+          font.family: root.bar ? root.bar.fontFamily : Style.font.family
+          font.pixelSize: Style.font.bodySmall
+        }
+        Row {
+          width: parent.width
+          spacing: Style.space(8)
+          LayoutMirroring.enabled: false
+
+          Button {
+            width: parent.width / 2 - Style.space(4)
+            text: strings.t("stopKeep")
+            onClicked: { root.askStop = false; root.run('exec "$T" stop >/dev/null') }
+          }
+          Button {
+            width: parent.width / 2 - Style.space(4)
+            text: strings.t("stopDiscard")
+            bordered: true
+            onClicked: { root.askStop = false; root.run('exec "$T" stop --discard >/dev/null') }
+          }
+        }
+        Text {
+          width: parent.width
+          wrapMode: Text.WordWrap
+          textFormat: Text.PlainText
+          text: strings.t("stopNote")
+          color: Qt.darker(root.foreground, 1.6)
+          font.family: root.bar ? root.bar.fontFamily : Style.font.family
+          font.pixelSize: Style.font.caption
+        }
+      }
+
+      // ---- The regular popup body, hidden while the stop question shows. ----
+      Column {
+        width: parent.width
+        spacing: Style.space(8)
+        visible: !root.askStop
+
+      // Header: phase + round on the left, skip and maximize on the right.
+      Row {
+        width: parent.width
+        spacing: Style.space(6)
+
+        Text {
+          anchors.verticalCenter: parent.verticalCenter
+          textFormat: Text.PlainText
+          text: {
+            if (!root.status || root.phase === "idle") return "TOMATE"
+            var name = root.phaseName(root.status.phase)
+            return name.toUpperCase() + (root.status.breaks !== false
+              ? " · " + strings.t("round").arg(root.status.round).arg(root.status.every) : "")
+          }
+          color: root.stateColor
+          font.family: root.bar ? root.bar.fontFamily : Style.font.family
+          font.pixelSize: Style.font.caption
+          elide: Text.ElideRight
+          width: parent.width - skipBtn.width - maxBtn.width - Style.space(16)
+        }
+
+        Button {
+          id: skipBtn
+          anchors.verticalCenter: parent.verticalCenter
+          visible: root.status && !root.status.idle && !root.status.waiting
+          iconText: "⏭"
+          tooltipText: strings.t("skip")
+          bordered: true
+          onClicked: root.run('exec "$T" skip >/dev/null')
+        }
+        Button {
+          id: maxBtn
+          anchors.verticalCenter: parent.verticalCenter
+          iconText: "🗗"
+          tooltipText: strings.t("open")
+          bordered: true
+          onClicked: { root.popupOpen = false; root.openWindow() }
+        }
+      }
+
+      // The hero: the time left, huge, in the phase color.
+      Text {
+        anchors.horizontalCenter: parent.horizontalCenter
+        textFormat: Text.PlainText
+        text: !root.status || root.phase === "idle" ? "—" : root.clock(root.status.remaining)
+        color: root.stateColor
+        font.family: root.bar ? root.bar.fontFamily : Style.font.family
+        font.pixelSize: Math.round(Style.font.displayLarge * 1.8)
+        font.weight: Font.Bold
+      }
+
+      // One line of context: the project.
+      Text {
+        visible: text !== ""
+        anchors.horizontalCenter: parent.horizontalCenter
+        width: parent.width
+        horizontalAlignment: Text.AlignHCenter
+        textFormat: Text.PlainText
+        text: root.status && root.phase !== "idle" ? String(root.status.project || "") : ""
+        color: root.foreground
+        font.family: root.bar ? root.bar.fontFamily : Style.font.family
+        font.pixelSize: Style.font.subtitle
+        elide: Text.ElideRight
+      }
+
+      // ends · today, dim, one line.
+      Text {
+        anchors.horizontalCenter: parent.horizontalCenter
+        textFormat: Text.PlainText
+        text: {
+          if (!root.status) return ""
+          var parts = []
+          if (root.status.ends && !root.status.paused && !root.status.waiting && !root.status.idle)
+            parts.push(strings.t("ends").arg(root.status.ends))
+          parts.push(root.status.goal > 0
+            ? strings.t("today").arg(root.hm(root.status.today)).arg(root.hm(root.status.goal))
+            : strings.t("todayNoGoal").arg(root.hm(root.status.today)))
+          return parts.join(" · ")
+        }
+        color: Qt.darker(root.foreground, 1.45)
+        font.family: root.bar ? root.bar.fontFamily : Style.font.family
+        font.pixelSize: Style.font.caption
+      }
+
+      // Stop secondary, Start/Pause/Resume primary and wider.
+      Row {
+        width: parent.width
+        spacing: Style.space(8)
+        LayoutMirroring.enabled: false
+
+        Button {
+          anchors.verticalCenter: parent.verticalCenter
+          width: parent.width * 0.38 - Style.space(4)
+          text: strings.t("stop")
+          bordered: true
+          visible: root.status && !root.status.idle && !root.status.waiting
+          onClicked: root.stop()
+        }
+        Button {
+          anchors.verticalCenter: parent.verticalCenter
+          width: (visible ? parent.width * 0.62 : parent.width) - Style.space(4)
+          text: root.mainAction
+          onClicked: root.run('exec "$T" toggle >/dev/null')
+        }
+      }
+      } // regular body
     }
   }
 

@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tomate · Bar Popup Widget — UI Prototype</title>
+<style>
+/* Omarchy theme tokens · catppuccin-mocha (matches the default Omarchy look) */
+:root{
+  color-scheme:dark;
+  --font:"JetBrainsMono Nerd Font","JetBrainsMono Nerd Font","JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --bg:#1e1e2e;
+  --bg-deep:#11111b;
+  --panel:#181825;
+  --mantle:#181825;
+  --crust:#11111b;
+  --sel:#45475a;
+  --line:#313244;
+  --text:#cdd6f4;
+  --bright:#cdd6f4;
+  --dim:#9399b2;
+  --overlay0:#6c7086;
+  --accent:#89b4fa;
+  --green:#a6e3a1;
+  --amber:#f9e2af;
+  --orange:#fab387;
+  --red:#f38ba8;
+  --magenta:#cba6f7;
+  --yellow:#f9e2af;
+  --soft:color-mix(in srgb,var(--text) 72%,var(--bg));
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.7 var(--font);font-variant-ligatures:contextual;-webkit-font-smoothing:antialiased}
+::selection{background:var(--sel);color:var(--bright)}
+b,strong{color:var(--bright);font-weight:700}
+
+/* ---------- page scaffold ---------- */
+.hero{background:var(--bg-deep);border-bottom:2px solid var(--accent);padding:36px 24px 22px;max-width:920px;margin:0 auto}
+.hero h1{font-size:1.6rem;margin:0 0 8px;color:var(--bright);font-weight:800}
+.hero h1::before{content:"❯ ";color:var(--accent)}
+.lede{color:var(--soft);max-width:72ch;margin:0 0 8px}
+.meta{font-size:.78rem;color:var(--dim)}
+.wrap{max-width:920px;margin:0 auto;padding:0 24px 60px}
+section{padding:32px 0;border-bottom:1px solid var(--line)}
+h2{font-size:1.25rem;margin:0 0 4px;color:var(--bright);font-weight:800}
+h2 .num{color:var(--accent);margin-right:10px}
+.lead{color:var(--soft);margin:0 0 18px}
+h3{font-size:.98rem;margin:24px 0 8px;color:var(--bright)}
+h3::before{content:"## ";color:var(--dim);font-weight:400}
+p{margin:0 0 12px}
+code{background:var(--panel);color:var(--accent);padding:1px 6px;font-size:.88em}
+.callout{border:1px solid var(--line);border-left:2px solid var(--accent);padding:12px 16px;margin:18px 0;background:color-mix(in srgb,var(--accent) 8%,var(--bg))}
+.callout .title{font-weight:700;margin-bottom:4px;color:var(--accent)}
+.callout.tip{border-left-color:var(--green)}.callout.tip .title{color:var(--green)}
+.callout.warn{border-left-color:var(--amber)}.callout.warn .title{color:var(--amber)}
+
+/* ---------- desktop mock (bar + popup) ---------- */
+.desktop{position:relative;border:1px solid var(--line);background:
+  radial-gradient(1200px 500px at 30% 20%, color-mix(in srgb,var(--accent) 7%, var(--bg)), var(--bg-deep));
+  border-radius:2px;overflow:hidden;min-height:520px;padding-bottom:70px}
+.hint-dots{padding:18px 22px 0;font-size:.8rem;color:var(--dim)}
+
+/* the Omarchy bar itself */
+.bar{position:absolute;left:0;right:0;bottom:0;height:42px;display:flex;align-items:center;
+  background:color-mix(in srgb,var(--bg) 88%, transparent);border-top:1px solid var(--line);
+  padding:0 12px;gap:14px;font-size:.92rem;z-index:2}
+.bar .left{display:flex;gap:14px;color:var(--dim)}
+.bar .centerEnd{margin-left:auto;display:flex;gap:14px;align-items:center}
+.ws{padding:0 8px;color:var(--soft)}
+.ws.on{color:var(--accent);border-bottom:2px solid var(--accent)}
+
+/* the tomate segment in the bar — click target */
+.barbtn{display:inline-flex;align-items:center;gap:8px;padding:4px 10px;cursor:pointer;
+  border:1px solid transparent;user-select:none;background:none;color:var(--text);font:inherit}
+.barbtn:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--bg))}
+.barbtn:active{transform:scale(.97)}
+.barbtn.unavailable{color:var(--dim)}
+
+/* popup anchored above the bar segment */
+.popup{position:absolute;right:12px;bottom:52px;width:340px;z-index:3;
+  background:var(--crust);border:1px solid var(--line);border-top:2px solid var(--state,var(--accent));
+  box-shadow:0 12px 40px rgba(0,0,0,.55)}
+.popup-head{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);
+  font-size:.8rem;color:var(--dim);letter-spacing:.04em}
+.popup-head .phase{color:var(--state,var(--accent));font-weight:700;text-transform:uppercase}
+.popup-head .spacer{flex:1}
+.iconbtn{background:none;border:1px solid var(--line);color:var(--dim);width:26px;height:26px;
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font:inherit;font-size:.85rem;padding:0}
+.iconbtn:hover{color:var(--bright);border-color:var(--accent)}
+.iconbtn.big{width:30px;height:30px}
+
+/* timer body: ring + time */
+.timer{display:flex;align-items:center;gap:18px;padding:16px 18px 6px}
+.ring{position:relative;width:88px;height:88px;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring .track{stroke:color-mix(in srgb,var(--text) 22%,transparent)}
+.ring .arc{stroke:var(--state,var(--accent));transition:stroke-dashoffset .3s}
+.ring .center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:1rem;color:var(--state,var(--accent))}
+.biggertime{font-size:2.6rem;line-height:1;color:var(--bright);font-weight:700;letter-spacing:-.02em}
+.timermeta{min-width:0}
+.project{color:var(--bright);font-size:.92rem;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.roundinfo{color:var(--dim);font-size:.8rem}
+.endsat{color:var(--dim);font-size:.8rem;margin-top:2px}
+
+/* today progress */
+.today{padding:10px 18px 14px;font-size:.8rem;color:var(--dim)}
+.todaybar{height:6px;background:color-mix(in srgb,var(--text) 15%,transparent);margin-top:6px;position:relative}
+.todaybar i{position:absolute;inset:0 auto 0 0;width:0;background:var(--green);display:block}
+
+/* actions */
+.actions{display:flex;gap:10px;padding:0 18px 6px}
+.btn{flex:1;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--bg));
+  color:var(--accent);font:inherit;font-size:.88rem;padding:8px 0;cursor:pointer;letter-spacing:.02em}
+.btn:hover{background:color-mix(in srgb,var(--accent) 26%,var(--bg))}
+.btn:active{transform:scale(.98)}
+.btn.primary{border-color:var(--green);background:color-mix(in srgb,var(--green) 14%,var(--bg));color:var(--green)}
+.btn.primary:hover{background:color-mix(in srgb,var(--green) 26%,var(--bg))}
+.popup-foot{padding:8px 14px 10px;font-size:.72rem;color:var(--overlay0);text-align:center}
+
+/* note line for focus phase */
+.note{padding:0 18px 8px;color:var(--soft);font-size:.8rem;font-style:italic;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* state switcher under the mock */
+.states{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.sbtn{background:var(--panel);border:1px solid var(--line);color:var(--soft);font:inherit;
+  font-size:.82rem;padding:5px 12px;cursor:pointer}
+.sbtn.on{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--bg))}
+.caption{text-align:center;color:var(--dim);font-size:.8rem;margin-top:8px}
+kbd{border:1px solid var(--line);border-bottom-width:2px;padding:0 6px;background:var(--panel);color:var(--bright);font-size:.82em}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>Tomate · Bar Popup Widget</h1>
+  <p class="lede">UI prototype for the new bar interaction: clicking the Tomate segment in the Omarchy bar no longer toggles the timer — it opens this popup, where you start/stop, see everything at a glance, or maximize into the full Tomate window.</p>
+  <p class="meta">docs/bar-popup-prototype.html · tomate / omarchy · interactive prototype — click things</p>
+</header>
+
+<main class="wrap">
+
+<section id="prototype">
+  <h2><span class="num">1</span>Interactive prototype</h2>
+  <p class="lead">Click the Tomate segment in the mock bar below to open and close the popup. Switch the mock timer state with the buttons underneath — every phase renders.</p>
+
+  <div class="desktop" id="desktop">
+    <div class="hint-dots">Desktop · Hyprland · workspace 1 — the popup anchors above the bar segment, in Omarchy style: square corners, 2px accent border on top.</div>
+
+    <!-- ===== the popup ===== -->
+    <div class="popup" id="popup" hidden style="--state:var(--accent)">
+      <div class="popup-head">
+        <span class="phase" id="p-phase">Focus</span>
+        <span id="p-stateword">· round 2 of 4</span>
+        <span class="spacer"></span>
+        <button class="iconbtn" id="p-skip" title="Skip to next phase" onclick="alert('(prototype) Skip to next phase — same as the Skip control in the main window.')">⏭</button>
+        <button class="iconbtn big" id="p-max" title="Open Tomate window" onclick="alert('(prototype) Maximize: opens the full Tomate window on this workspace — same as the old right-click `tomate show`.')">🗗</button>
+      </div>
+
+      <div class="timer">
+        <div class="ring">
+          <svg width="88" height="88" viewBox="0 0 88 88">
+            <circle class="track" cx="44" cy="44" r="38" fill="none" stroke-width="5"></circle>
+            <circle class="arc" id="p-arc" cx="44" cy="44" r="38" fill="none" stroke-width="5"
+                    stroke-dasharray="238.76" stroke-dashoffset="238.76"></circle>
+          </svg>
+          <div class="center" id="p-icon">🍅</div>
+        </div>
+        <div class="timermeta">
+          <div class="biggertime" id="p-time">24:31</div>
+          <div class="project" id="p-project">ifood checkout redesign</div>
+          <div class="roundinfo" id="p-round">Round 2 of 4 · focus</div>
+          <div class="endsat" id="p-ends">ends 15:04</div>
+        </div>
+      </div>
+
+      <div class="note" id="p-note">“refactor the payment step”</div>
+
+      <div class="today">
+        <span id="p-today">Today 1h 45m of 4h</span>
+        <div class="todaybar"><i id="p-todaybar" style="width:44%"></i></div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="p-stop" onclick="alert('(prototype) Stop resets the current block back to ready — the hold-to-stop from the main app.')">Stop</button>
+        <button class="btn primary" id="p-main" onclick="toggleRun()">Pause</button>
+      </div>
+      <div class="popup-foot" id="p-hint">Left-click on bar: open this popup · maximize opens the full window</div>
+    </div>
+
+    <!-- ===== the bar ===== -->
+    <div class="bar">
+      <div class="left">
+        <span class="ws on">1</span><span class="ws">2</span><span class="ws">3</span>
+      </div>
+      <div class="centerEnd">
+        <button class="barbtn" id="barbtn" onclick="togglePopup(event)" title="Tomate — click to open the popup">
+          <svg width="16" height="16" viewBox="0 0 16 16" style="flex:none">
+            <circle cx="8" cy="8" r="6.4" fill="none" stroke="color-mix(in srgb,var(--text) 22%,transparent)" stroke-width="2.4"></circle>
+            <circle cx="8" cy="8" r="6.4" fill="none" stroke="var(--accent)" stroke-width="2.4"
+                    stroke-dasharray="40.2" stroke-dashoffset="12" transform="rotate(-90 8 8)"></circle>
+          </svg>
+          <span id="bar-label" style="color:var(--accent)">24:31 · ifood</span>
+        </button>
+        <span style="color:var(--dim)">🔊</span>
+        <span style="color:var(--dim)">⌨</span>
+        <span style="color:var(--dim)">21:31</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="states">
+    <button class="sbtn on" data-s="focus" onclick="setProto('focus',this)">Focus · running</button>
+    <button class="sbtn" data-s="paused" onclick="setProto('paused',this)">Paused</button>
+    <button class="sbtn" data-s="short" onclick="setProto('short',this)">Short break</button>
+    <button class="sbtn" data-s="long" onclick="setProto('long',this)">Long break</button>
+    <button class="sbtn" data-s="ready" onclick="setProto('ready',this)">Ready</button>
+    <button class="sbtn" data-s="idle" onclick="setProto('idle',this)">Idle</button>
+  </div>
+  <p class="caption" id="state-caption">Prototype only — the real widget reads <code>tomate status --json</code> every second, so the popup always agrees with the main window.</p>
+</section>
+
+<section id="behavior">
+  <h2><span class="num">2</span>What changes in the bar</h2>
+  <p class="lead">The bar segment keeps its look (ring + time + project); only its click behavior changes.</p>
+
+  <h3>Before → after</h3>
+  <p><b>Before:</b> left-click anywhere on the segment toggles start/pause; right-click opens the Tomate window.<br>
+  <b>After:</b> left-click opens this popup; right-click still opens the Tomate window directly. Inside the popup, <b>Start/Pause</b> is the big primary button, <b>Stop</b> sits beside it, and <b>🗗</b> maximizes to the full window. <b>⏭</b> skips to the next phase.</p>
+
+  <div class="callout">
+    <div class="title">Why a popup</div>
+    <p>A single toggle on a ~80px bar segment is cheap to trigger and shows nothing about the session. The popup gives a confirmable target for start/stop, shows round, end time, note and today's progress — and the maximize button replaces the discoverability the old right-click had.</p>
+  </div>
+
+  <h3>Layout rules</h3>
+  <p>· Popup width 340px, anchored above the bar segment (centerEnd section), same margin as other Omarchy popups.<br>
+  · Top border 2px in the phase color: accent = focus, green = short, magenta = long, yellow = ready.<br>
+  · Ring center icon shows the state: 🍅 focus, ⏸ paused, ▶ ready, ☕ breaks.<br>
+  · The note line and project are hidden when empty; the popup shrinks gracefully.<br>
+  · Click outside the popup (or <kbd>Esc</kbd>) closes it, without touching the timer.</p>
+</section>
+
+<section id="states-gallery">
+  <h2><span class="num">3</span>State reference</h2>
+  <p class="lead">Colors and controls per phase — use the switcher above to see each live.</p>
+  <p>· <b>Focus running</b> — accent blue ring draining, primary button reads <b>Pause</b>.<br>
+  · <b>Paused</b> — dimmed ring with pause glyph, button reads <b>Resume</b>, “paused time doesn't count as work” footnote.<br>
+  · <b>Short / Long break</b> — green / magenta ring, coffee glyph, note line hidden.<br>
+  · <b>Ready</b> — yellow full ring with play glyph, button reads <b>Start</b>, shows which phase would start.<br>
+  · <b>Idle</b> — bar shows just the tomato glyph; the popup offers <b>Start focus</b> with the current project.</p>
+</section>
+
+</main>
+
+<script>
+// ---------- popup open/close (prototype-local) ----------
+var popup = document.getElementById('popup');
+function togglePopup(e){ e.stopPropagation(); popup.hidden = !popup.hidden; }
+document.getElementById('desktop').addEventListener('click', function(e){
+  if(!popup.hidden && !popup.contains(e.target)) popup.hidden = true;
+});
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') popup.hidden = true; });
+
+// ---------- mock timer run/pause ----------
+var running = true, remain = 24*60+31, tick = null;
+function fmt(s){ s=Math.max(0,Math.round(s)); var m=Math.floor(s/60), r=s%60;
+  return (m<10?'0':'')+m+':'+(r<10?'0':'')+r; }
+function toggleRun(){
+  if(state==='idle'||state==='ready'){ alert('(prototype) Starts the block — bar ring begins draining.'); return; }
+  running = !running;
+  document.getElementById('p-main').textContent = running ? 'Pause' : 'Resume';
+}
+
+// ---------- state switching ----------
+var state = 'focus';
+var CIRC = 238.76;
+var states = {
+  focus:  {word:'Focus', color:'var(--accent)',  icon:'🍅', time:'24:31', frac:.51,
+           project:'ifood checkout redesign', round:'Round 2 of 4 · focus', ends:'ends 15:04',
+           note:'“refactor the payment step”', main:'Pause', today:'Today 1h 45m of 4h', bar:'44%',
+           barlabel:'24:31 · ifood', hint:'Left-click on bar: open this popup · maximize opens the full window'},
+  paused: {word:'Paused', color:'color-mix(in srgb,var(--text) 62%,var(--bg))', icon:'⏸', time:'24:31', frac:.51,
+           project:'ifood checkout redesign', round:'Round 2 of 4 · paused', ends:'',
+           note:'Paused time doesn\u2019t count as work.', main:'Resume', today:'Today 1h 45m of 4h', bar:'44%',
+           barlabel:'24:31 · ifood', hint:'Left-click on bar: open this popup · maximize opens the full window'},
+  short:  {word:'Short break', color:'var(--green)', icon:'☕', time:'04:12', frac:.35,
+           project:'—', round:'Round 2 of 4 · break', ends:'ends 15:00',
+           note:'', main:'Pause', today:'Today 1h 45m of 4h', bar:'44%',
+           barlabel:'04:12', hint:'Left-click on bar: open this popup · maximize opens the full window'},
+  long:   {word:'Long break', color:'var(--magenta)', icon:'☕', time:'14:02', frac:.47,
+           project:'—', round:'After round 4 · break', ends:'ends 15:16',
+           note:'', main:'Pause', today:'Today 1h 50m of 4h', bar:'46%',
+           barlabel:'14:02', hint:'Left-click on bar: open this popup · maximize opens the full window'},
+  ready:  {word:'Focus ready', color:'var(--yellow)', icon:'▶', time:'25:00', frac:1,
+           project:'ifood checkout redesign', round:'Round 3 of 4 · waiting', ends:'',
+           note:'', main:'Start', today:'Today 2h 10m of 4h', bar:'54%',
+           barlabel:'ready', hint:'Flash three times in the bar, as today · Start begins the block'},
+  idle:   {word:'Tomate', color:'var(--dim)', icon:'🍅', time:'—', frac:1,
+           project:'no project', round:'nothing scheduled', ends:'',
+           note:'', main:'Start focus', today:'Today 0m', bar:'0%',
+           barlabel:'', hint:'Idle: bar shows only the tomato glyph'}
+};
+function setProto(s, btn){
+  state = s; running = (s==='focus'||s==='short'||s==='long');
+  document.querySelectorAll('.sbtn').forEach(function(b){b.classList.remove('on')});
+  if(btn) btn.classList.add('on');
+  var d = states[s];
+  var p = popup;
+  p.style.setProperty('--state', d.color);
+  document.getElementById('p-phase').textContent = d.word;
+  document.getElementById('p-stateword').textContent = s==='idle' ? '' : '· '+d.round.split(' · ')[0].toLowerCase();
+  document.getElementById('p-time').textContent = d.time;
+  document.getElementById('p-project').textContent = d.project;
+  document.getElementById('p-round').textContent = d.round;
+  document.getElementById('p-ends').textContent = d.ends;
+  var note = document.getElementById('p-note');
+  note.textContent = d.note; note.style.display = d.note ? '' : 'none';
+  document.getElementById('p-icon').textContent = d.icon;
+  document.getElementById('p-main').textContent = d.main;
+  document.getElementById('p-today').textContent = d.today;
+  document.getElementById('p-todaybar').style.width = d.bar;
+  document.getElementById('p-hint').textContent = d.hint;
+  document.getElementById('p-arc').style.strokeDashoffset = String(CIRC*(1-d.frac));
+  document.getElementById('bar-label').textContent = d.barlabel;
+  document.getElementById('bar-label').style.color = d.color;
+  popup.hidden = false; // show the state being inspected
+}
+</script>
+</body>
+</html>

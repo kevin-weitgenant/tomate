@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tomate · Popup Design Variations</title>
+<style>
+/* Omarchy theme tokens · catppuccin-mocha */
+:root{
+  color-scheme:dark;
+  --font:"JetBrainsMono Nerd Font","JetBrainsMono Nerd Font","JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --bg:#1e1e2e; --bg-deep:#11111b; --panel:#181825; --crust:#11111b;
+  --sel:#45475a; --line:#313244;
+  --text:#cdd6f4; --bright:#cdd6f4; --dim:#9399b2; --overlay0:#6c7086;
+  --accent:#89b4fa; --green:#a6e3a1; --amber:#f9e2af; --magenta:#cba6f7; --yellow:#f9e2af;
+  --soft:color-mix(in srgb,var(--text) 72%,var(--bg));
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.7 var(--font);font-variant-ligatures:contextual;-webkit-font-smoothing:antialiased}
+.hero{background:var(--bg-deep);border-bottom:2px solid var(--accent);padding:36px 24px 22px;max-width:1180px;margin:0 auto}
+.hero h1{font-size:1.6rem;margin:0 0 8px;color:var(--bright);font-weight:800}
+.hero h1::before{content:"❯ ";color:var(--accent)}
+.lede{color:var(--soft);max-width:74ch;margin:0 0 8px}
+.meta{font-size:.78rem;color:var(--dim)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px 60px}
+h2{font-size:1.25rem;margin:26px 0 4px;color:var(--bright);font-weight:800}
+h2 .num{color:var(--accent);margin-right:10px}
+.lead{color:var(--soft);margin:0 0 18px}
+
+/* phase switcher */
+.states{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 24px;position:sticky;top:0;background:var(--bg);padding:10px 0;z-index:5;border-bottom:1px solid var(--line)}
+.sbtn{background:var(--panel);border:1px solid var(--line);color:var(--soft);font:inherit;font-size:.82rem;padding:5px 12px;cursor:pointer}
+.sbtn.on{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--bg))}
+
+/* gallery */
+.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:26px;align-items:start}
+.variant{border:1px solid var(--line);background:var(--bg-deep);padding:16px}
+.variant h3{margin:0 0 2px;color:var(--bright);font-size:1rem}
+.variant h3 .tag{color:var(--accent)}
+.vdesc{color:var(--soft);font-size:.82rem;margin:0 0 14px;min-height:3.2em}
+.pros{margin:12px 0 0;font-size:.78rem;color:var(--dim)}
+.pros b{color:var(--bright)}
+.pick{display:block;width:100%;margin-top:12px;border:1px solid var(--green);background:color-mix(in srgb,var(--green) 12%,var(--bg));color:var(--green);font:inherit;font-size:.86rem;padding:7px 0;cursor:pointer}
+.pick:hover{background:color-mix(in srgb,var(--green) 24%,var(--bg))}
+.picked{outline:2px solid var(--green);outline-offset:2px}
+
+/* ============ shared popup bits ============ */
+.popup{background:var(--crust);border:1px solid var(--line);position:relative}
+.iconbtn{background:none;border:1px solid var(--line);color:var(--dim);width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font:inherit;font-size:.85rem;padding:0}
+.iconbtn:hover{color:var(--bright);border-color:var(--accent)}
+.btn{border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--bg));color:var(--accent);font:inherit;font-size:.86rem;padding:7px 12px;cursor:pointer}
+.btn.primary{border-color:var(--green);background:color-mix(in srgb,var(--green) 14%,var(--bg));color:var(--green)}
+.btn:hover{filter:brightness(1.2)}
+.btn:active{transform:scale(.98)}
+.statecol{color:var(--stc,var(--accent))}
+.dim{color:var(--dim)}
+.sm{font-size:.8rem}
+
+/* ============ A · compact panel (current prototype) ============ */
+.vA{width:100%;max-width:340px;border-top:2px solid var(--stc,var(--accent))}
+.vA .head{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:.78rem;color:var(--dim)}
+.vA .head b{color:var(--stc,var(--accent));text-transform:uppercase}
+.vA .head .sp{flex:1}
+.vA .timer{display:flex;align-items:center;gap:16px;padding:14px 16px 4px}
+.vA .ring{position:relative;width:84px;height:84px;flex:none}
+.vA .ring svg{transform:rotate(-90deg)}
+.vA .track{stroke:color-mix(in srgb,var(--text) 22%,transparent)}
+.vA .arc{stroke:var(--stc,var(--accent))}
+.vA .rc{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.95rem;color:var(--stc,var(--accent))}
+.vA .bigt{font-size:2.3rem;line-height:1;color:var(--bright);font-weight:700}
+.vA .proj{color:var(--bright);font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+.vA .today{padding:8px 16px 12px;font-size:.76rem;color:var(--dim)}
+.vA .tb{height:6px;background:color-mix(in srgb,var(--text) 15%,transparent);margin-top:5px}
+.vA .tb i{display:block;height:100%;background:var(--green)}
+.vA .acts{display:flex;gap:8px;padding:0 16px 12px}
+.vA .acts .btn{flex:1}
+
+/* ============ B · big timer ============ */
+.vB{width:100%;max-width:340px;text-align:center;border-top:2px solid var(--stc,var(--accent))}
+.vB .head{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;font-size:.74rem;color:var(--dim)}
+.vB .huge{font-size:4rem;line-height:1.1;font-weight:800;color:var(--stc,var(--accent));letter-spacing:-.03em;padding:8px 0 0}
+.vB .proj{color:var(--soft);font-size:.9rem;padding:0 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vB .under{display:flex;justify-content:center;gap:14px;font-size:.76rem;color:var(--dim);padding:4px 0 10px}
+.vB .acts{display:flex;gap:8px;padding:0 14px 14px}
+.vB .acts .btn{flex:1}
+.vB .acts .btn.primary{flex:2}
+
+/* ============ C · vertical ring ============ */
+.vC{width:100%;max-width:300px;text-align:center;border-top:2px solid var(--stc,var(--accent))}
+.vC .ring{position:relative;width:170px;height:170px;margin:18px auto 0}
+.vC .ring svg{transform:rotate(-90deg)}
+.vC .track{stroke:color-mix(in srgb,var(--text) 18%,transparent)}
+.vC .arc{stroke:var(--stc,var(--accent))}
+.vC .inring{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.vC .inring .t{font-size:2.4rem;font-weight:700;color:var(--bright);line-height:1}
+.vC .inring .p{font-size:.72rem;color:var(--stc,var(--accent));text-transform:uppercase;letter-spacing:.08em;margin-top:6px}
+.vC .meta{font-size:.8rem;color:var(--soft);padding:10px 14px 2px}
+.vC .meta .dim{display:block;font-size:.74rem}
+.vC .dots{display:flex;justify-content:center;gap:6px;padding:10px 0 4px}
+.vC .dots i{width:9px;height:9px;border-radius:50%;background:color-mix(in srgb,var(--text) 20%,transparent)}
+.vC .dots i.done{background:var(--accent)}
+.vC .dots i.now{background:var(--stc,var(--accent));box-shadow:0 0 0 2px color-mix(in srgb,var(--stc,var(--accent)) 35%,transparent)}
+.vC .acts{display:flex;gap:8px;padding:10px 14px 14px}
+.vC .acts .btn{flex:1}
+.vC .head{position:absolute;top:8px;right:8px;display:flex;gap:6px}
+
+/* ============ D · terminal / flat ============ */
+.vD{width:100%;max-width:360px;border-left:2px solid var(--stc,var(--accent))}
+.vD pre{margin:0;padding:14px 16px;font:13px/1.75 var(--font);color:var(--text);white-space:pre}
+.vD .k{color:var(--dim)} .vD .v{color:var(--stc,var(--accent))} .vD .g{color:var(--green)}
+.vD .acts{display:flex;gap:8px;padding:0 14px 12px}
+.vD .acts .btn{flex:1;border-radius:0}
+.vD .btn,.vD .iconbtn{border-radius:0}
+.vD .txtbar{height:4px;background:color-mix(in srgb,var(--text) 12%,transparent);margin:0 16px 12px;position:relative}
+.vD .txtbar i{position:absolute;inset:0 auto 0 0;background:var(--stc,var(--accent));display:block}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>Tomate · Popup design variations</h1>
+  <p class="lede">Four candidate designs for the bar popup. Switch the phase to see each design in every state, then pick the one you want implemented in Widget.qml.</p>
+  <p class="meta">docs/bar-popup-variations.html · tomate / omarchy · companion to bar-popup-prototype.html</p>
+</header>
+
+<main class="wrap">
+
+<div class="states">
+  <button class="sbtn on" onclick="setPhase('focus',this)">Focus</button>
+  <button class="sbtn" onclick="setPhase('paused',this)">Paused</button>
+  <button class="sbtn" onclick="setPhase('short',this)">Short break</button>
+  <button class="sbtn" onclick="setPhase('long',this)">Long break</button>
+  <button class="sbtn" onclick="setPhase('ready',this)">Ready</button>
+  <button class="sbtn" onclick="setPhase('idle',this)">Idle</button>
+</div>
+
+<div class="gallery">
+
+  <!-- ================= A ================= -->
+  <div class="variant" id="varA">
+    <h3><span class="tag">A</span> · Compact panel</h3>
+    <p class="vdesc">The current prototype: ring + time side by side, everything visible, one row of buttons. Densest of the four.</p>
+    <div class="popup vA" data-v="A">
+      <div class="head"><b class="ph">Focus</b><span class="rw">· round 2 of 4</span><span class="sp"></span>
+        <button class="iconbtn" onclick="alert('(prototype) skip')">⏭</button><button class="iconbtn" onclick="alert('(prototype) maximize')">🗗</button></div>
+      <div class="timer">
+        <div class="ring"><svg width="84" height="84" viewBox="0 0 84 84">
+          <circle class="track" cx="42" cy="42" r="36" fill="none" stroke-width="5"></circle>
+          <circle class="arc" cx="42" cy="42" r="36" fill="none" stroke-width="5" stroke-dasharray="226.2" stroke-dashoffset="110"></circle>
+        </svg><div class="rc ico">🍅</div></div>
+        <div><div class="bigt time">24:31</div><div class="proj pj">ifood checkout redesign</div><div class="sm dim ends">ends 15:04</div></div>
+      </div>
+      <div class="today"><span class="td">Today 1h 45m of 4h</span><div class="tb"><i style="width:44%"></i></div></div>
+      <div class="acts"><button class="btn">Stop</button><button class="btn primary main">Pause</button></div>
+    </div>
+    <p class="pros"><b>Pros:</b> most info in least height · closest to the main app's layout.<br><b>Cons:</b> busiest; small ring.</p>
+    <button class="pick" onclick="pick('A')">Pick A</button>
+  </div>
+
+  <!-- ================= B ================= -->
+  <div class="variant" id="varB">
+    <h3><span class="tag">B</span> · Big timer</h3>
+    <p class="vdesc">The time is the hero: huge digits in phase color, one line of context, two fat buttons. Minimal chrome.</p>
+    <div class="popup vB" data-v="B">
+      <div class="head"><span class="ph">FOCUS · ROUND 2/4</span><span style="display:flex;gap:6px">
+        <button class="iconbtn" onclick="alert('(prototype) skip')">⏭</button><button class="iconbtn" onclick="alert('(prototype) maximize')">🗗</button></span></div>
+      <div class="huge time">24:31</div>
+      <div class="proj pj">ifood checkout redesign</div>
+      <div class="under"><span class="ends">ends 15:04</span><span>·</span><span class="td">today 1h 45m / 4h</span></div>
+      <div class="acts"><button class="btn">Stop</button><button class="btn primary main">Pause</button></div>
+    </div>
+    <p class="pros"><b>Pros:</b> glanceable from across the desk · calm · simplest to build.<br><b>Cons:</b> no ring — progress is less felt; no note line.</p>
+    <button class="pick" onclick="pick('B')">Pick B</button>
+  </div>
+
+  <!-- ================= C ================= -->
+  <div class="variant" id="varC">
+    <h3><span class="tag">C</span> · Vertical ring</h3>
+    <p class="vdesc">Centered medallion: big ring with the time inside, round dots showing position in the cycle, like a watch face.</p>
+    <div class="popup vC" data-v="C">
+      <div class="head"><button class="iconbtn" onclick="alert('(prototype) skip')">⏭</button><button class="iconbtn" onclick="alert('(prototype) maximize')">WindowSize</button></div>
+      <div class="ring"><svg width="170" height="170" viewBox="0 0 170 170">
+          <circle class="track" cx="85" cy="85" r="76" fill="none" stroke-width="7"></circle>
+          <circle class="arc" cx="85" cy="85" r="76" fill="none" stroke-width="7" stroke-dasharray="477.5" stroke-dashoffset="234"></circle>
+        </svg>
+        <div class="inring"><div class="t time">24:31</div><div class="p ph">Focus</div></div></div>
+      <div class="meta pj">ifood checkout redesign<span class="dim rw">round 2 of 4 · ends 15:04</span></div>
+      <div class="dots"><i class="done"></i><i class="now"></i><i></i><i></i><i class="dim" style="border-radius:50%"></i></div>
+      <div class="acts"><button class="btn">Stop</button><button class="btn primary main">Pause</button></div>
+    </div>
+    <p class="pros"><b>Pros:</b> most tactile progress feel · cycle dots are unique · pretty.<br><b>Cons:</b> tallest; ring duplicates the bar segment's metaphor.</p>
+    <button class="pick" onclick="pick('C')">Pick C</button>
+  </div>
+
+  <!-- ================= D ================= -->
+  <div class="variant" id="varD">
+    <h3><span class="tag">D</span> · Terminal flat</h3>
+    <p class="vdesc">Status-line aesthetic: key-value rows, thin progress bar, flat square buttons. Reads like `tomate status`, live.</p>
+    <div class="popup vD" data-v="D">
+      <pre><span class="k">tomate</span>  <span class="v ph">focus</span>  <span class="k">round</span> <span class="rw">2/4</span>
+<span class="k">left</span>     <span class="v time">24:31</span>  <span class="k">ends</span> <span class="ends">15:04</span>
+<span class="k">project</span>  <span class="pj">ifood checkout…</span>
+<span class="k">today</span>    <span class="g td">1h 45m</span> <span class="k">of</span> 4h</pre>
+      <div class="txtbar"><i style="width:51%"></i></div>
+      <div class="acts"><button class="btn">Stop</button><button class="btn primary main">Pause</button>
+        <button class="btn" onclick="alert('(prototype) skip')">⏭</button><button class="btn" onclick="alert('(prototype) maximize')">🗗</button></div>
+    </div>
+    <p class="pros"><b>Pros:</b> most "Omarchy" hacker feel · compact · trivially cheap to render.<br><b>Cons:</b> least warm; no ring or icon language.</p>
+    <button class="pick" onclick="pick('D')">Pick D</button>
+  </div>
+
+</div>
+
+<h2><span class="num">2</span>What every variation shares</h2>
+<p class="lead" style="color:var(--soft)">Only the body differs — the interaction contract is fixed:</p>
+<p>· Opens on <b>left-click</b> of the bar segment; clicking the segment again, outside, or <b>Esc</b> closes it.<br>
+  · Primary button is Start / Pause / Resume by state; Stop and Skip are secondary.<br>
+  · <b>Maximize</b> (🗗 / Max button) opens the full Tomate window — replaces the old right-click.<br>
+  · Top or left 2px border in the phase color: accent, green (short), magenta (long), yellow (ready).<br>
+  · Data still comes from `tomate status --json` once a second — bar, popup and window always agree.</p>
+
+</main>
+
+<script>
+var C = {A:226.2, B:0, C:477.5, D:0};
+var S = {
+  focus:  {color:'var(--accent)',   icon:'🍅', time:'24:31', frac:.51, ph:'Focus',       phB:'FOCUS · ROUND 2/4', main:'Pause',  rw:'round 2 of 4', ends:'ends 15:04', pj:'ifood checkout redesign', td:'1h 45m', off:'44%'},
+  paused: {color:'var(--dim)',      icon:'⏸', time:'24:31', frac:.51, ph:'Paused',      phB:'PAUSED · ROUND 2/4',main:'Resume', rw:'round 2 of 4', ends:'',              pj:'ifood checkout redesign', td:'1h 45m', off:'44%'},
+  short:  {color:'var(--green)',    icon:'☕', time:'04:12', frac:.35, ph:'Short break', phB:'SHORT BREAK · 2/4', main:'Pause',  rw:'break 2/4',   ends:'ends 15:00', pj:'—',                        td:'1h 45m', off:'35%'},
+  long:   {color:'var(--magenta)',  icon:'☕', time:'14:02', frac:.47, ph:'Long break',  phB:'LONG BREAK',       main:'Pause',  rw:'break after 4',ends:'ends 15:16', pj:'—',                        td:'1h 50m', off:'47%'},
+  ready:  {color:'var(--yellow)',   icon:'▶', time:'25:00', frac:1,   ph:'Ready',       phB:'FOCUS READY',      main:'Start',  rw:'waiting',     ends:'',              pj:'ifood checkout redesign', td:'2h 10m', off:'0%'},
+  idle:   {color:'var(--dim)',      icon:'🍅', time:'—',    frac:1,   ph:'Idle',        phB:'TOMATE',           main:'Start focus', rw:'nothing scheduled', ends:'',     pj:'no project',              td:'0m',     off:'0%'}
+};
+function setPhase(p, btn){
+  document.querySelectorAll('.sbtn').forEach(function(b){b.classList.remove('on')});
+  if(btn) btn.classList.add('on');
+  var d = S[p];
+  document.querySelectorAll('.popup').forEach(function(el){
+    var v = el.dataset.v;
+    el.style.setProperty('--stc', d.color);
+    el.querySelectorAll('.ph').forEach(function(x){x.textContent = v==='B' ? d.phB : d.ph});
+    el.querySelectorAll('.time').forEach(function(x){x.textContent = d.time});
+    el.querySelectorAll('.main').forEach(function(x){x.textContent = d.main});
+    el.querySelectorAll('.rw').forEach(function(x){x.textContent = d.rw});
+    var e = el.querySelectorAll('.ends'); e.forEach(function(x){x.textContent = d.ends; x.style.display = d.ends ? '' : 'none'});
+    el.querySelectorAll('.pj').forEach(function(x){x.textContent = d.pj});
+    el.querySelectorAll('.td').forEach(function(x){x.textContent = v==='B'||v==='D' ? (v==='D'?'1h 45m':'today '+d.td+' / 4h') : 'Today '+d.td+' of 4h'});
+    var arc = el.querySelector('.arc');
+    if(arc){ var circ = v==='C' ? 477.5 : 226.2; arc.style.strokeDashoffset = String(circ*(1-d.frac)); }
+    var ico = el.querySelector('.ico'); if(ico) ico.textContent = d.icon;
+    var bar = el.querySelector('.txtbar i'); if(bar) bar.style.width = String(Math.round(d.frac*100))+'%';
+  });
+}
+function pick(v){
+  document.querySelectorAll('.variant').forEach(function(x){x.classList.remove('picked')});
+  document.getElementById('var'+v).classList.add('picked');
+  alert('Noted: variation '+v+'. Tell me in the chat and I\u2019ll implement it in Widget.qml.');
+}
+</script>
+</body>
+</html>

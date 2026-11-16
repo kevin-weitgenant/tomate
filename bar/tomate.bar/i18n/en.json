@@ -9,8 +9,19 @@
   "pausedNote": "Paused time doesn't count as work.",
   "today": "Today %1 of %2",
   "todayNoGoal": "Today %1",
-  "hintRunning": "Click: pause · Right-click: open Tomate",
-  "hintPaused": "Click: resume · Right-click: open Tomate",
-  "hintReady": "Click: start · Right-click: open Tomate",
-  "hintIdle": "Click: start focus · Right-click: open Tomate"
+  "hintRunning": "Click: open the timer · Right-click: open Tomate",
+  "hintPaused": "Click: open the timer · Right-click: open Tomate",
+  "hintReady": "Click: open the timer · Right-click: open Tomate",
+  "hintIdle": "Click: open the timer · Right-click: open Tomate",
+  "start": "Start",
+  "pause": "Pause",
+  "resume": "Resume",
+  "stop": "Stop",
+  "skip": "Skip to the next phase",
+  "open": "Open the Tomate window",
+  "stopQ": "Stop this pomodoro?",
+  "stopWorked": "You worked %1 of %2.",
+  "stopKeep": "Keep the time",
+  "stopDiscard": "Discard",
+  "stopNote": "Keep logs it on the calendar as an unfinished block; Discard removes it completely. Closing this cancels."
 }
